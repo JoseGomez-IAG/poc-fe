@@ -1,0 +1,469 @@
+---
+description: Project architecture patterns, design patterns, structural conventions, and organizational best practices for scalable and maintainable codebases
+globs: "**/*"
+alwaysApply: true
+---
+
+# Project Patterns & Architecture Rules
+
+## Project Structure Standards
+
+### Universal Project Organization
+
+```
+project-root/
+├── .env.example              # Environment template
+├── .gitignore               # Version control exclusions
+├── .cursor/                 # Cursor AI configuration
+│   ├── settings.json        # Cursor-specific settings
+│   └── rules/              # AI agent rules
+├── README.md               # Project documentation
+├── package.json            # Dependencies and scripts
+├── tsconfig.json           # TypeScript configuration
+├── src/                    # Source code
+├── tests/                  # Test files
+├── docs/                   # Documentation
+└── scripts/                # Build and utility scripts
+```
+
+### Frontend Project Structure (React/Vue/Angular)
+
+```
+src/
+├── components/             # Reusable UI components
+│   ├── ui/                # Basic UI components (Button, Input, etc.)
+│   ├── forms/             # Form-specific components
+│   └── layout/            # Layout components (Header, Sidebar, etc.)
+├── pages/                 # Page/route components
+├── hooks/                 # Custom React hooks
+├── services/              # API calls and external services
+├── stores/                # State management (Redux, Zustand, Pinia)
+├── utils/                 # Utility functions and helpers
+├── types/                 # TypeScript type definitions
+├── constants/             # Application constants
+├── assets/                # Static assets (images, fonts, etc.)
+└── styles/                # Global styles and themes
+```
+
+### Backend Project Structure (Node.js/Express)
+
+```
+src/
+├── controllers/           # Request handlers
+├── services/             # Business logic layer
+├── repositories/         # Data access layer
+├── models/               # Data models and schemas
+├── middleware/           # Custom middleware functions
+├── routes/               # Route definitions
+├── utils/                # Utility functions
+├── types/                # TypeScript type definitions
+├── config/               # Configuration files
+├── validators/           # Input validation schemas
+└── __tests__/            # Test files
+```
+
+### Python Project Structure
+
+```
+src/
+├── api/                  # API route handlers
+├── services/             # Business logic
+├── models/               # Data models
+├── repositories/         # Data access layer
+├── utils/                # Utility functions
+├── config/               # Configuration
+├── middleware/           # Custom middleware
+└── schemas/              # Validation schemas
+
+tests/                    # Test files
+├── unit/                 # Unit tests
+├── integration/          # Integration tests
+└── fixtures/             # Test data
+```
+
+## Architectural Patterns
+
+### Layered Architecture
+
+```typescript
+// Controller Layer - Handle HTTP requests
+export class UserController {
+  constructor(private userService: UserService) {}
+
+  async createUser(req: Request, res: Response) {
+    try {
+      const userData = await this.userService.createUser(req.body);
+      res.status(201).json({ data: userData });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+}
+
+// Service Layer - Business logic
+export class UserService {
+  constructor(private userRepository: UserRepository) {}
+
+  async createUser(userData: CreateUserDTO): Promise<User> {
+    // Validate business rules
+    if (await this.userRepository.findByEmail(userData.email)) {
+      throw new Error("Email already exists");
+    }
+
+    // Hash password
+    const hashedPassword = await hashPassword(userData.password);
+
+    // Create user
+    return this.userRepository.create({
+      ...userData,
+      password: hashedPassword,
+    });
+  }
+}
+
+// Repository Layer - Data access
+export class UserRepository {
+  async create(userData: CreateUserData): Promise<User> {
+    return User.create(userData);
+  }
+
+  async findByEmail(email: string): Promise<User | null> {
+    return User.findOne({ where: { email } });
+  }
+}
+```
+
+### Dependency Injection Pattern
+
+```typescript
+// Service interfaces
+interface IUserRepository {
+  create(userData: CreateUserData): Promise<User>;
+  findByEmail(email: string): Promise<User | null>;
+}
+
+interface IEmailService {
+  sendWelcomeEmail(user: User): Promise<void>;
+}
+
+// Service implementation with dependency injection
+export class UserService {
+  constructor(
+    private userRepository: IUserRepository,
+    private emailService: IEmailService
+  ) {}
+
+  async createUser(userData: CreateUserDTO): Promise<User> {
+    const user = await this.userRepository.create(userData);
+    await this.emailService.sendWelcomeEmail(user);
+    return user;
+  }
+}
+
+// Dependency injection container
+const container = {
+  userRepository: new UserRepository(),
+  emailService: new EmailService(),
+  userService: new UserService(
+    container.userRepository,
+    container.emailService
+  ),
+};
+```
+
+### Repository Pattern
+
+```typescript
+// Generic repository interface
+interface IRepository<T, ID> {
+  findById(id: ID): Promise<T | null>;
+  findAll(options?: FindOptions): Promise<T[]>;
+  create(entity: Partial<T>): Promise<T>;
+  update(id: ID, updates: Partial<T>): Promise<T | null>;
+  delete(id: ID): Promise<boolean>;
+}
+
+// Base repository implementation
+export abstract class BaseRepository<T, ID> implements IRepository<T, ID> {
+  constructor(protected model: any) {}
+
+  async findById(id: ID): Promise<T | null> {
+    return this.model.findByPk(id);
+  }
+
+  async findAll(options: FindOptions = {}): Promise<T[]> {
+    return this.model.findAll({
+      limit: options.limit || 10,
+      offset: options.offset || 0,
+      order: options.orderBy
+        ? [[options.orderBy, options.orderDirection || "ASC"]]
+        : undefined,
+    });
+  }
+
+  async create(entity: Partial<T>): Promise<T> {
+    return this.model.create(entity);
+  }
+
+  async update(id: ID, updates: Partial<T>): Promise<T | null> {
+    const [affectedRows] = await this.model.update(updates, { where: { id } });
+    return affectedRows > 0 ? this.findById(id) : null;
+  }
+
+  async delete(id: ID): Promise<boolean> {
+    const affectedRows = await this.model.destroy({ where: { id } });
+    return affectedRows > 0;
+  }
+}
+
+// Specific repository
+export class UserRepository extends BaseRepository<User, string> {
+  constructor() {
+    super(UserModel);
+  }
+
+  async findByEmail(email: string): Promise<User | null> {
+    return this.model.findOne({ where: { email } });
+  }
+
+  async findActiveUsers(): Promise<User[]> {
+    return this.model.findAll({ where: { isActive: true } });
+  }
+}
+```
+
+## Configuration Management
+
+### Environment-Based Configuration
+
+```typescript
+// config/index.ts
+interface AppConfig {
+  port: number;
+  database: DatabaseConfig;
+  auth: AuthConfig;
+  external: ExternalServicesConfig;
+}
+
+const config: AppConfig = {
+  port: parseInt(process.env.PORT || "3000"),
+  database: {
+    host: process.env.DB_HOST || "localhost",
+    port: parseInt(process.env.DB_PORT || "5432"),
+    name: process.env.DB_NAME || "app_db",
+    username: process.env.DB_USERNAME!,
+    password: process.env.DB_PASSWORD!,
+    ssl: process.env.NODE_ENV === "production",
+  },
+  auth: {
+    jwtSecret: process.env.JWT_SECRET!,
+    tokenExpiry: process.env.TOKEN_EXPIRY || "1h",
+    refreshTokenExpiry: process.env.REFRESH_TOKEN_EXPIRY || "7d",
+  },
+  external: {
+    emailService: {
+      apiKey: process.env.EMAIL_API_KEY!,
+      from: process.env.EMAIL_FROM || "noreply@app.com",
+    },
+    redis: {
+      url: process.env.REDIS_URL || "redis://localhost:6379",
+    },
+  },
+};
+
+export default config;
+```
+
+### Feature Flags Pattern
+
+```typescript
+// Feature flag service
+export class FeatureFlagService {
+  private flags: Map<string, boolean> = new Map();
+
+  constructor() {
+    this.loadFlags();
+  }
+
+  private loadFlags() {
+    this.flags.set("NEW_AUTH_FLOW", process.env.FEATURE_NEW_AUTH === "true");
+    this.flags.set(
+      "ENHANCED_LOGGING",
+      process.env.FEATURE_ENHANCED_LOGGING === "true"
+    );
+    this.flags.set("BETA_FEATURES", process.env.FEATURE_BETA === "true");
+  }
+
+  isEnabled(flagName: string): boolean {
+    return this.flags.get(flagName) || false;
+  }
+
+  async isEnabledForUser(flagName: string, userId: string): Promise<boolean> {
+    const baseFlag = this.isEnabled(flagName);
+    if (!baseFlag) return false;
+
+    // Additional user-based logic
+    const user = await UserService.findById(userId);
+    return user?.betaTester || false;
+  }
+}
+
+// Usage in controllers
+export class AuthController {
+  async login(req: Request, res: Response) {
+    if (FeatureFlags.isEnabled("NEW_AUTH_FLOW")) {
+      return this.newAuthFlow(req, res);
+    }
+    return this.legacyAuthFlow(req, res);
+  }
+}
+```
+
+## Error Handling Patterns
+
+### Centralized Error Handling
+
+```typescript
+// Custom error classes
+export class AppError extends Error {
+  constructor(
+    public message: string,
+    public statusCode: number = 500,
+    public code: string = "INTERNAL_ERROR"
+  ) {
+    super(message);
+    this.name = this.constructor.name;
+  }
+}
+
+export class ValidationError extends AppError {
+  constructor(message: string, public field?: string) {
+    super(message, 400, "VALIDATION_ERROR");
+  }
+}
+
+export class NotFoundError extends AppError {
+  constructor(resource: string) {
+    super(`${resource} not found`, 404, "NOT_FOUND");
+  }
+}
+
+// Global error handler middleware
+export const errorHandler = (
+  error: Error,
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  logger.error("Error occurred:", {
+    error: error.message,
+    stack: error.stack,
+    url: req.url,
+    method: req.method,
+    user: req.user?.id,
+  });
+
+  if (error instanceof AppError) {
+    return res.status(error.statusCode).json({
+      error: {
+        message: error.message,
+        code: error.code,
+        ...(process.env.NODE_ENV === "development" && { stack: error.stack }),
+      },
+    });
+  }
+
+  // Handle specific error types
+  if (error.name === "ValidationError") {
+    return res.status(400).json({
+      error: {
+        message: "Validation failed",
+        code: "VALIDATION_ERROR",
+        details: error.message,
+      },
+    });
+  }
+
+  // Default error response
+  res.status(500).json({
+    error: {
+      message: "Internal server error",
+      code: "INTERNAL_ERROR",
+    },
+  });
+};
+```
+
+## Performance Patterns
+
+### Caching Strategy
+
+```typescript
+// Redis cache service
+export class CacheService {
+  private client: Redis;
+
+  constructor() {
+    this.client = new Redis(process.env.REDIS_URL);
+  }
+
+  async get<T>(key: string): Promise<T | null> {
+    const value = await this.client.get(key);
+    return value ? JSON.parse(value) : null;
+  }
+
+  async set(key: string, value: any, ttl: number = 3600): Promise<void> {
+    await this.client.setex(key, ttl, JSON.stringify(value));
+  }
+
+  async del(key: string): Promise<void> {
+    await this.client.del(key);
+  }
+
+  async invalidatePattern(pattern: string): Promise<void> {
+    const keys = await this.client.keys(pattern);
+    if (keys.length > 0) {
+      await this.client.del(...keys);
+    }
+  }
+}
+
+// Cache decorator
+function Cache(ttl: number = 3600) {
+  return function (
+    target: any,
+    propertyName: string,
+    descriptor: PropertyDescriptor
+  ) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (...args: any[]) {
+      const cacheKey = `${
+        target.constructor.name
+      }:${propertyName}:${JSON.stringify(args)}`;
+
+      const cached = await cacheService.get(cacheKey);
+      if (cached) {
+        return cached;
+      }
+
+      const result = await method.apply(this, args);
+      await cacheService.set(cacheKey, result, ttl);
+
+      return result;
+    };
+  };
+}
+
+// Usage
+export class UserService {
+  @Cache(1800) // 30 minutes
+  async getUserProfile(userId: string): Promise<UserProfile> {
+    return this.userRepository.getProfileWithStats(userId);
+  }
+}
+
+    return this.userRepository.getProfileWithStats(userId);
+  }
+}
+```

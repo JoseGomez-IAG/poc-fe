@@ -1,0 +1,705 @@
+---
+description: "Advanced AI agent features for sophisticated development workflows"
+globs: "**/*"
+alwaysApply: true
+---
+
+# Cursor Agent Enhanced Capabilities
+
+_Advanced AI agent features for sophisticated development workflows_
+
+## Purpose & Scope
+
+This document defines advanced capabilities for Cursor AI agents, building upon the behavioral control framework and core development standards to provide intelligent, context-aware development assistance.
+
+**Foundation:** See [Agent Control Framework](./agent_control_framework.mdc) for behavioral control and decision-making logic.
+
+**Standards:** See [Core Development Standards](./core_development_standards.mdc) for fundamental coding patterns.
+
+**Domains:** See [Specialized Domains](./specialized_domains.mdc) for API, security, and testing implementations.
+
+---
+
+## Advanced Code Generation Capabilities
+
+### Intelligent Context Analysis
+
+```typescript
+interface CodebaseContext {
+  projectType: "webapp" | "api" | "library" | "microservice" | "monolith";
+  techStack: TechStackInfo;
+  architecturePatterns: string[];
+  codeConventions: CodeConventions;
+  testingStrategy: TestingStrategy;
+  securityRequirements: SecurityLevel;
+}
+
+interface TechStackInfo {
+  languages: string[];
+  frameworks: string[];
+  databases: string[];
+  cloudProviders: string[];
+  buildTools: string[];
+  testingFrameworks: string[];
+}
+
+class ContextAnalyzer {
+  async analyzeCodebase(projectPath: string): Promise<CodebaseContext> {
+    const packageFiles = await this.findPackageFiles(projectPath);
+    const configFiles = await this.findConfigFiles(projectPath);
+    const sourceStructure = await this.analyzeSourceStructure(projectPath);
+
+    return {
+      projectType: this.inferProjectType(sourceStructure),
+      techStack: this.extractTechStack(packageFiles, configFiles),
+      architecturePatterns: this.identifyArchitecturePatterns(sourceStructure),
+      codeConventions: this.extractCodeConventions(sourceStructure),
+      testingStrategy: this.identifyTestingStrategy(sourceStructure),
+      securityRequirements: this.assessSecurityRequirements(sourceStructure),
+    };
+  }
+
+  // Advanced pattern recognition
+  private identifyArchitecturePatterns(structure: SourceStructure): string[] {
+    const patterns: string[] = [];
+
+    if (this.hasPattern(structure, "layered_architecture")) {
+      patterns.push("layered_architecture");
+    }
+    if (this.hasPattern(structure, "clean_architecture")) {
+      patterns.push("clean_architecture");
+    }
+    if (this.hasPattern(structure, "microservices")) {
+      patterns.push("microservices");
+    }
+    if (this.hasPattern(structure, "event_driven")) {
+      patterns.push("event_driven");
+    }
+
+    return patterns;
+  }
+}
+```
+
+### Multi-File Coordination
+
+```typescript
+interface MultiFileOperation {
+  targetFiles: string[];
+  dependencies: FileDependency[];
+  changeSequence: FileChange[];
+  validationSteps: ValidationStep[];
+}
+
+class MultiFileCoordinator {
+  async planChanges(
+    request: DevelopmentRequest,
+    context: CodebaseContext
+  ): Promise<MultiFileOperation> {
+    const affectedFiles = await this.identifyAffectedFiles(request, context);
+    const dependencies = await this.analyzeDependencies(affectedFiles);
+    const changeSequence = this.planChangeSequence(affectedFiles, dependencies);
+
+    return {
+      targetFiles: affectedFiles,
+      dependencies,
+      changeSequence,
+      validationSteps: this.createValidationSteps(changeSequence),
+    };
+  }
+
+  async executeChanges(
+    operation: MultiFileOperation
+  ): Promise<ExecutionResult> {
+    const results: FileChangeResult[] = [];
+
+    for (const change of operation.changeSequence) {
+      try {
+        const result = await this.executeFileChange(change);
+        results.push(result);
+
+        // Validate after each change
+        const validation = await this.validateChange(
+          change,
+          operation.validationSteps
+        );
+        if (!validation.success) {
+          return this.rollbackChanges(results, validation.error);
+        }
+      } catch (error) {
+        return this.rollbackChanges(results, error);
+      }
+    }
+
+    return { success: true, changes: results };
+  }
+
+  // Intelligent dependency resolution
+  private async analyzeDependencies(
+    files: string[]
+  ): Promise<FileDependency[]> {
+    const dependencies: FileDependency[] = [];
+
+    for (const file of files) {
+      const imports = await this.extractImports(file);
+      const exports = await this.extractExports(file);
+      const usages = await this.findUsages(file, files);
+
+      dependencies.push({
+        file,
+        imports,
+        exports,
+        dependents: usages.dependents,
+        dependencies: usages.dependencies,
+      });
+    }
+
+    return this.resolveCircularDependencies(dependencies);
+  }
+}
+```
+
+### Intelligent Code Completion
+
+```typescript
+interface CodeCompletionContext {
+  cursorPosition: Position;
+  surroundingCode: CodeContext;
+  projectContext: CodebaseContext;
+  userIntent: UserIntent;
+  availableSymbols: Symbol[];
+}
+
+class IntelligentCompletion {
+  async generateCompletion(
+    context: CodeCompletionContext
+  ): Promise<CompletionSuggestion[]> {
+    const baseOptions = await this.generateBaseOptions(context);
+    const contextualOptions = await this.generateContextualOptions(context);
+    const intelligentOptions = await this.generateIntelligentOptions(context);
+
+    return this.rankAndFilterSuggestions(
+      [...baseOptions, ...contextualOptions, ...intelligentOptions],
+      context
+    );
+  }
+
+  // Context-aware suggestions
+  private async generateContextualOptions(
+    context: CodeCompletionContext
+  ): Promise<CompletionSuggestion[]> {
+    const suggestions: CompletionSuggestion[] = [];
+
+    // Pattern-based suggestions
+    if (this.isInTestFile(context)) {
+      suggestions.push(...this.generateTestPatterns(context));
+    }
+
+    if (this.isInAPIRoute(context)) {
+      suggestions.push(...this.generateAPIPatterns(context));
+    }
+
+    if (this.isInComponent(context)) {
+      suggestions.push(...this.generateComponentPatterns(context));
+    }
+
+    // Security-aware suggestions
+    if (this.isSecuritySensitive(context)) {
+      suggestions.push(...this.generateSecurityPatterns(context));
+    }
+
+    return suggestions;
+  }
+
+  // Predictive code generation
+  private async generateIntelligentOptions(
+    context: CodeCompletionContext
+  ): Promise<CompletionSuggestion[]> {
+    const userPatterns = await this.analyzeUserPatterns(context);
+    const projectPatterns = await this.analyzeProjectPatterns(context);
+
+    return [
+      ...this.predictNextLogicalStep(context, userPatterns),
+      ...this.suggestRefactoringOpportunities(context, projectPatterns),
+      ...this.recommendBestPractices(context),
+    ];
+  }
+}
+```
+
+## Advanced Refactoring Capabilities
+
+### Intelligent Code Analysis
+
+```typescript
+interface RefactoringOpportunity {
+  type: RefactoringType;
+  location: CodeLocation;
+  description: string;
+  impact: ImpactAssessment;
+  suggestedAction: RefactoringAction;
+  confidence: number;
+}
+
+class CodeAnalyzer {
+  async analyzeForRefactoring(
+    codebase: string[],
+    context: CodebaseContext
+  ): Promise<RefactoringOpportunity[]> {
+    const opportunities: RefactoringOpportunity[] = [];
+
+    // Detect code smells
+    opportunities.push(...(await this.detectCodeSmells(codebase)));
+
+    // Find duplication
+    opportunities.push(...(await this.findDuplication(codebase)));
+
+    // Identify architectural improvements
+    opportunities.push(
+      ...(await this.identifyArchitecturalImprovements(codebase, context))
+    );
+
+    // Performance optimization opportunities
+    opportunities.push(...(await this.findPerformanceIssues(codebase)));
+
+    // Security improvements
+    opportunities.push(...(await this.findSecurityIssues(codebase)));
+
+    return this.prioritizeOpportunities(opportunities);
+  }
+
+  // Advanced pattern detection
+  private async detectCodeSmells(
+    codebase: string[]
+  ): Promise<RefactoringOpportunity[]> {
+    const smells: RefactoringOpportunity[] = [];
+
+    for (const file of codebase) {
+      const ast = await this.parseToAST(file);
+
+      // Long method detection
+      const longMethods = this.findLongMethods(ast);
+      smells.push(
+        ...longMethods.map((method) => ({
+          type: "EXTRACT_METHOD",
+          location: method.location,
+          description: `Method ${method.name} is too long (${method.lines} lines)`,
+          impact: this.assessImpact("MEDIUM", ["maintainability"]),
+          suggestedAction: this.createExtractMethodAction(method),
+          confidence: 0.8,
+        }))
+      );
+
+      // Large class detection
+      const largeClasses = this.findLargeClasses(ast);
+      smells.push(
+        ...largeClasses.map((cls) => ({
+          type: "SPLIT_CLASS",
+          location: cls.location,
+          description: `Class ${cls.name} has too many responsibilities`,
+          impact: this.assessImpact("HIGH", ["maintainability", "testability"]),
+          suggestedAction: this.createSplitClassAction(cls),
+          confidence: 0.7,
+        }))
+      );
+
+      // Feature envy detection
+      const featureEnvy = this.findFeatureEnvy(ast);
+      smells.push(
+        ...featureEnvy.map((instance) => ({
+          type: "MOVE_METHOD",
+          location: instance.location,
+          description: `Method ${instance.method} uses more features from ${instance.targetClass}`,
+          impact: this.assessImpact("MEDIUM", ["cohesion"]),
+          suggestedAction: this.createMoveMethodAction(instance),
+          confidence: 0.6,
+        }))
+      );
+    }
+
+    return smells;
+  }
+}
+```
+
+### Automated Refactoring Execution
+
+```typescript
+class RefactoringExecutor {
+  async executeRefactoring(
+    opportunity: RefactoringOpportunity,
+    options: RefactoringOptions = {}
+  ): Promise<RefactoringResult> {
+    // Pre-execution validation
+    const validation = await this.validateRefactoring(opportunity);
+    if (!validation.safe) {
+      return { success: false, error: validation.issues };
+    }
+
+    // Create backup
+    const backup = await this.createBackup(opportunity.location);
+
+    try {
+      // Execute refactoring
+      const changes = await this.performRefactoring(opportunity);
+
+      // Validate results
+      const testResults = await this.runTests(changes.affectedFiles);
+      if (!testResults.allPassed) {
+        await this.restoreBackup(backup);
+        return { success: false, error: "Tests failed after refactoring" };
+      }
+
+      // Verify code quality
+      const qualityCheck = await this.checkCodeQuality(changes.affectedFiles);
+      if (qualityCheck.degraded) {
+        await this.restoreBackup(backup);
+        return { success: false, error: "Code quality degraded" };
+      }
+
+      return {
+        success: true,
+        changes,
+        metrics: this.calculateImpactMetrics(opportunity, changes),
+      };
+    } catch (error) {
+      await this.restoreBackup(backup);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Safe refactoring patterns
+  private async performExtractMethod(
+    method: MethodInfo,
+    extractionConfig: ExtractionConfig
+  ): Promise<CodeChange[]> {
+    const changes: CodeChange[] = [];
+
+    // Extract the method
+    const extractedMethod = this.createExtractedMethod(
+      method.body.slice(extractionConfig.startLine, extractionConfig.endLine),
+      extractionConfig.newMethodName,
+      extractionConfig.parameters
+    );
+
+    // Insert new method
+    changes.push({
+      type: "INSERT",
+      file: method.file,
+      position: method.endPosition,
+      content: extractedMethod,
+    });
+
+    // Replace original code with method call
+    changes.push({
+      type: "REPLACE",
+      file: method.file,
+      range: extractionConfig.extractionRange,
+      content: this.createMethodCall(
+        extractionConfig.newMethodName,
+        extractionConfig.parameters
+      ),
+    });
+
+    // Update tests if needed
+    const testChanges = await this.updateTestsForExtraction(
+      method,
+      extractionConfig
+    );
+    changes.push(...testChanges);
+
+    return changes;
+  }
+}
+```
+
+## Intelligent Testing Integration
+
+### Test Generation
+
+```typescript
+class TestGenerator {
+  async generateTests(
+    targetCode: CodeUnit,
+    context: CodebaseContext
+  ): Promise<GeneratedTest[]> {
+    const testStrategy = this.determineTestStrategy(targetCode, context);
+
+    return [
+      ...(await this.generateUnitTests(targetCode, testStrategy)),
+      ...(await this.generateIntegrationTests(targetCode, testStrategy)),
+      ...(await this.generateEdgeCaseTests(targetCode, testStrategy)),
+    ];
+  }
+
+  // Intelligent test case generation
+  private async generateUnitTests(
+    code: CodeUnit,
+    strategy: TestStrategy
+  ): Promise<GeneratedTest[]> {
+    const tests: GeneratedTest[] = [];
+
+    // Analyze function signature and behavior
+    const analysis = await this.analyzeCodeBehavior(code);
+
+    // Generate happy path tests
+    for (const scenario of analysis.happyPaths) {
+      tests.push(this.createHappyPathTest(code, scenario, strategy));
+    }
+
+    // Generate error condition tests
+    for (const errorCondition of analysis.errorConditions) {
+      tests.push(this.createErrorTest(code, errorCondition, strategy));
+    }
+
+    // Generate boundary tests
+    for (const boundary of analysis.boundaries) {
+      tests.push(this.createBoundaryTest(code, boundary, strategy));
+    }
+
+    // Generate property-based tests
+    if (strategy.usePropertyTesting) {
+      tests.push(...this.createPropertyTests(code, analysis));
+    }
+
+    return tests;
+  }
+
+  // Context-aware test generation
+  private createHappyPathTest(
+    code: CodeUnit,
+    scenario: TestScenario,
+    strategy: TestStrategy
+  ): GeneratedTest {
+    const testName = this.generateTestName(code, scenario, "happy_path");
+    const testData = this.generateTestData(scenario.inputs);
+    const expectedOutput = this.predictExpectedOutput(code, testData);
+
+    return {
+      name: testName,
+      type: "unit",
+      framework: strategy.framework,
+      code: this.generateTestCode(
+        testName,
+        code,
+        testData,
+        expectedOutput,
+        strategy
+      ),
+      assertions: this.generateAssertions(expectedOutput, strategy),
+      setup: this.generateTestSetup(code, scenario, strategy),
+      cleanup: this.generateTestCleanup(code, scenario, strategy),
+    };
+  }
+}
+```
+
+### Test Maintenance
+
+```typescript
+class TestMaintainer {
+  async maintainTests(
+    codeChanges: CodeChange[],
+    existingTests: Test[]
+  ): Promise<TestMaintenanceResult> {
+    const affectedTests = this.findAffectedTests(codeChanges, existingTests);
+    const maintenanceActions: TestMaintenanceAction[] = [];
+
+    for (const test of affectedTests) {
+      const analysis = await this.analyzeTestImpact(test, codeChanges);
+
+      if (analysis.needsUpdate) {
+        maintenanceActions.push({
+          type: "UPDATE",
+          test,
+          changes: await this.generateTestUpdates(test, codeChanges),
+        });
+      }
+
+      if (analysis.isObsolete) {
+        maintenanceActions.push({
+          type: "REMOVE",
+          test,
+          reason: analysis.obsoleteReason,
+        });
+      }
+
+      if (analysis.needsExpansion) {
+        maintenanceActions.push({
+          type: "EXPAND",
+          test,
+          additions: await this.generateAdditionalTests(test, codeChanges),
+        });
+      }
+    }
+
+    return {
+      actions: maintenanceActions,
+      impact: this.assessMaintenanceImpact(maintenanceActions),
+      recommendations:
+        this.generateMaintenanceRecommendations(maintenanceActions),
+    };
+  }
+}
+```
+
+## Performance Optimization
+
+### Performance Analysis
+
+```typescript
+class PerformanceAnalyzer {
+  async analyzePerformance(
+    codebase: string[],
+    context: CodebaseContext
+  ): Promise<PerformanceReport> {
+    const issues: PerformanceIssue[] = [];
+
+    // Algorithmic complexity analysis
+    issues.push(...(await this.analyzeComplexity(codebase)));
+
+    // Memory usage analysis
+    issues.push(...(await this.analyzeMemoryUsage(codebase)));
+
+    // Database query optimization
+    issues.push(...(await this.analyzeDatabaseQueries(codebase)));
+
+    // Network performance
+    issues.push(...(await this.analyzeNetworkOperations(codebase)));
+
+    // Bundle size analysis (for web applications)
+    if (context.projectType === "webapp") {
+      issues.push(...(await this.analyzeBundleSize(codebase)));
+    }
+
+    return {
+      issues: this.prioritizeIssues(issues),
+      recommendations: this.generateRecommendations(issues),
+      metrics: this.calculateMetrics(issues),
+      optimizationPlan: this.createOptimizationPlan(issues),
+    };
+  }
+
+  // Intelligent optimization suggestions
+  private async generateRecommendations(
+    issues: PerformanceIssue[]
+  ): Promise<OptimizationRecommendation[]> {
+    const recommendations: OptimizationRecommendation[] = [];
+
+    for (const issue of issues) {
+      switch (issue.type) {
+        case "INEFFICIENT_ALGORITHM":
+          recommendations.push(this.recommendAlgorithmOptimization(issue));
+          break;
+        case "MEMORY_LEAK":
+          recommendations.push(this.recommendMemoryOptimization(issue));
+          break;
+        case "SLOW_DATABASE_QUERY":
+          recommendations.push(this.recommendQueryOptimization(issue));
+          break;
+        case "UNNECESSARY_NETWORK_CALLS":
+          recommendations.push(this.recommendNetworkOptimization(issue));
+          break;
+      }
+    }
+
+    return recommendations;
+  }
+}
+```
+
+## Advanced Error Handling & Recovery
+
+### Intelligent Error Recovery
+
+```typescript
+class ErrorRecoverySystem {
+  async handleRuntimeError(
+    error: RuntimeError,
+    context: ExecutionContext
+  ): Promise<RecoveryResult> {
+    // Analyze error pattern
+    const analysis = await this.analyzeError(error, context);
+
+    // Attempt automatic recovery
+    if (analysis.recoverable) {
+      const recoveryStrategy = this.selectRecoveryStrategy(analysis);
+      const result = await this.executeRecovery(recoveryStrategy, context);
+
+      if (result.success) {
+        await this.logSuccessfulRecovery(error, recoveryStrategy);
+        return result;
+      }
+    }
+
+    // Generate improvement suggestions
+    const improvements = await this.generateImprovements(error, analysis);
+
+    return {
+      recovered: false,
+      error: analysis.rootCause,
+      suggestions: improvements,
+      preventionStrategy: this.generatePreventionStrategy(analysis),
+    };
+  }
+
+  // Pattern-based error recovery
+  private selectRecoveryStrategy(analysis: ErrorAnalysis): RecoveryStrategy {
+    const strategies = {
+      NETWORK_TIMEOUT: new RetryWithBackoffStrategy(),
+      RESOURCE_EXHAUSTION: new ResourceCleanupStrategy(),
+      DEPENDENCY_FAILURE: new FallbackStrategy(),
+      DATA_CORRUPTION: new DataRecoveryStrategy(),
+      CONFIGURATION_ERROR: new ConfigurationRepairStrategy(),
+    };
+
+    return strategies[analysis.category] || new DefaultRecoveryStrategy();
+  }
+}
+```
+
+## Integration Enhancement
+
+### External Service Integration
+
+```typescript
+class ServiceIntegrationEnhancer {
+  async enhanceIntegration(
+    service: ExternalService,
+    requirements: IntegrationRequirements
+  ): Promise<EnhancedIntegration> {
+    return {
+      client: await this.generateOptimizedClient(service, requirements),
+      errorHandling: this.generateErrorHandling(service),
+      monitoring: this.generateMonitoring(service),
+      testing: await this.generateIntegrationTests(service),
+      documentation: this.generateDocumentation(service),
+      securityConfig: this.generateSecurityConfiguration(service),
+    };
+  }
+
+  // Intelligent client generation
+  private async generateOptimizedClient(
+    service: ExternalService,
+    requirements: IntegrationRequirements
+  ): Promise<ServiceClient> {
+    const clientConfig = {
+      baseURL: service.baseURL,
+      timeout: this.calculateOptimalTimeout(service, requirements),
+      retryConfig: this.generateRetryConfig(service),
+      rateLimiting: this.generateRateLimitingConfig(service),
+      authentication: this.generateAuthConfig(service),
+      caching: this.generateCachingConfig(service, requirements),
+    };
+
+    return this.createServiceClient(service, clientConfig);
+  }
+}
+```
+
+These enhanced capabilities provide sophisticated AI-driven development features while maintaining integration with the behavioral control framework and core development standards.
+
+- Context-aware behavioral adaptation is beneficial
+- Learning and improvement opportunities arise
+
+The framework integrates seamlessly with existing rule structures, providing enhanced decision-making capabilities while respecting established behavioral controls and development standards.

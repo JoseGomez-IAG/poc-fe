@@ -1,0 +1,1966 @@
+---
+description: Comprehensive rules for executing commands in a terminal across different platforms and programming languages.
+globs: "**/*"
+alwaysApply: true
+---
+
+# Universal Terminal Command Execution & Output Processing Rules
+
+## Core Terminal Execution Principles
+
+- **Execute commands sequentially** with proper dependency management across all platforms
+- **Process output intelligently** to extract meaningful information regardless of shell type
+- **Handle errors gracefully** with platform-aware retry mechanisms
+- **Maintain command history** for context and debugging across Windows/Unix/Linux/macOS
+- **Validate commands** before execution to prevent destructive operations on any platform
+- **Parse output efficiently** to provide actionable insights for all project types
+- **Adapt to platform-specific behaviors** while maintaining consistent command patterns
+- **Support multi-language project detection** and context-aware command generation
+
+## Cross-Platform Sequential Command Execution
+
+### Universal Command Dependency Management
+
+```powershell
+# Windows PowerShell/Command Prompt
+$result1 = npm install
+if ($LASTEXITCODE -eq 0) {
+    $result2 = npm run build
+    if ($LASTEXITCODE -eq 0) {
+        npm run test
+    }
+}
+
+# Alternative for Command Prompt
+npm install && npm run build && npm run test
+```
+
+```bash
+# Unix/Linux/macOS (Bash/Zsh)
+if npm install; then
+    if npm run build; then
+        npm run test
+    fi
+fi
+
+# One-liner alternative
+npm install && npm run build && npm run test
+```
+
+```python
+# Python project equivalent
+python -m pip install -r requirements.txt && \
+python -m pytest --cov=src tests/ && \
+python -m mypy src/
+```
+
+```bash
+# Java/Maven project
+mvn clean install && mvn test && mvn package
+
+# Java/Gradle project
+./gradlew clean build test
+```
+
+```bash
+# Terraform project
+terraform init && terraform validate && terraform plan
+
+# GitOps/Kubernetes
+kubectl apply -f manifests/ && kubectl rollout status deployment/app
+```
+
+### Multi-Language Project Error Handling
+
+- **Check exit codes** after each command before proceeding (cross-platform)
+- **Implement language-specific fallback strategies** for non-critical failures
+- **Log all command outputs** with timestamp and project context
+- **Use conditional execution** based on previous command success and platform
+- **Provide meaningful error messages** tailored to project type and platform
+
+### Universal Command Validation Framework
+
+```typescript
+interface CommandValidation {
+  command: string;
+  projectType:
+    | "nodejs"
+    | "python"
+    | "java"
+    | "terraform"
+    | "gitops"
+    | "dotnet"
+    | "go"
+    | "rust"
+    | "generic";
+  platform: "windows" | "unix" | "cross-platform";
+  riskLevel: "low" | "medium" | "high" | "critical";
+  requiresConfirmation: boolean;
+  allowedInAutomation: boolean;
+  description: string;
+  alternatives?: string[];
+}
+
+const universalCommandRules: CommandValidation[] = [
+  // High-risk commands (cross-platform)
+  {
+    command: "rm -rf",
+    projectType: "generic",
+    platform: "unix",
+    riskLevel: "critical",
+    requiresConfirmation: true,
+    allowedInAutomation: false,
+    description: "Destructive file deletion (Unix)",
+    alternatives: ["rm -i", "find ... -delete"],
+  },
+  {
+    command: "Remove-Item -Recurse -Force",
+    projectType: "generic",
+    platform: "windows",
+    riskLevel: "critical",
+    requiresConfirmation: true,
+    allowedInAutomation: false,
+    description: "Destructive file deletion (Windows)",
+    alternatives: ["Remove-Item -Confirm"],
+  },
+  // Safe automation commands
+  {
+    command: "npm install",
+    projectType: "nodejs",
+    platform: "cross-platform",
+    riskLevel: "low",
+    requiresConfirmation: false,
+    allowedInAutomation: true,
+    description: "Install Node.js dependencies",
+  },
+  {
+    command: "pip install",
+    projectType: "python",
+    platform: "cross-platform",
+    riskLevel: "low",
+    requiresConfirmation: false,
+    allowedInAutomation: true,
+    description: "Install Python packages",
+  },
+  {
+    command: "mvn clean install",
+    projectType: "java",
+    platform: "cross-platform",
+    riskLevel: "low",
+    requiresConfirmation: false,
+    allowedInAutomation: true,
+    description: "Maven build and install",
+  },
+  {
+    command: "terraform apply",
+    projectType: "terraform",
+    platform: "cross-platform",
+    riskLevel: "high",
+    requiresConfirmation: true,
+    allowedInAutomation: false,
+    description: "Apply Terraform changes to infrastructure",
+  },
+  {
+    command: "kubectl delete",
+    projectType: "gitops",
+    platform: "cross-platform",
+    riskLevel: "high",
+    requiresConfirmation: true,
+    allowedInAutomation: false,
+    description: "Delete Kubernetes resources",
+  },
+];
+```
+
+## Universal Output Processing Strategies
+
+### Cross-Platform Structured Output Parsing
+
+```powershell
+# Windows PowerShell - Parse JSON output
+$dockerResult = docker inspect container_name | ConvertFrom-Json
+$status = $dockerResult[0].State.Status
+
+# Parse table output with PowerShell objects
+$processes = Get-Process | Where-Object { $_.CPU -gt 10 }
+$highCpuProcesses = $processes | Select-Object Name, CPU, WorkingSet
+
+# Parse log files efficiently
+$errorLines = Get-Content app.log | Where-Object { $_ -match "ERROR|FATAL|Exception" }
+```
+
+```bash
+# Unix/Linux/macOS - Parse JSON with jq
+status=$(docker inspect container_name | jq -r '.[0].State.Status')
+
+# Parse table output with awk/grep
+high_cpu_procs=$(ps aux | awk '$3 > 10.0 {print $11, $3}' | sort -k2 -nr)
+
+# Parse log files with grep/sed
+error_lines=$(grep -E "(ERROR|FATAL|Exception)" app.log | tail -50)
+```
+
+```python
+# Python projects - Parse outputs programmatically
+import json
+import subprocess
+
+def parse_docker_status(container_name):
+    result = subprocess.run(['docker', 'inspect', container_name],
+                          capture_output=True, text=True)
+    data = json.loads(result.stdout)
+    return data[0]['State']['Status']
+
+# Parse test output
+def parse_pytest_output(output):
+    lines = output.split('\n')
+    failed_tests = [line for line in lines if 'FAILED' in line]
+    return len(failed_tests)
+```
+
+```bash
+# Java/Maven projects - Parse build output
+mvn_errors=$(mvn clean test 2>&1 | grep -E "(ERROR|FAILURE|BUILD FAILURE)")
+test_results=$(mvn test | grep -E "Tests run:" | tail -1)
+
+# Gradle projects
+gradle_errors=$(./gradlew test 2>&1 | grep -E "(FAILED|ERROR)")
+```
+
+```bash
+# Terraform projects - Parse plan output
+terraform_changes=$(terraform plan | grep -E "(Plan:|will be)")
+terraform_errors=$(terraform validate 2>&1 | grep -E "Error:")
+
+# Kubernetes/GitOps - Parse deployment status
+kubectl_status=$(kubectl get pods -o json | jq -r '.items[].status.phase')
+deployment_ready=$(kubectl rollout status deployment/app --timeout=60s)
+```
+
+### Universal Output Classification
+
+- **Success indicators**:
+  - Exit codes (0 = success across all platforms)
+  - Language-specific success messages ("BUILD SUCCESS", "All tests passed", "Plan: 0 to add")
+  - Expected outputs (version numbers, file counts, deployment confirmations)
+- **Warning signals**:
+  - Non-zero exit codes with specific meanings (Node.js: 1-general, Python: 1-general, Java: Maven specific codes)
+  - Warning messages ("deprecated", "security vulnerabilities", "resource constraints")
+  - Platform-specific warnings (Windows: UAC prompts, Unix: permission warnings)
+- **Error patterns**:
+  - Exception messages (language-specific stack traces)
+  - Compilation/build failures (TypeScript errors, Python syntax errors, Java compilation errors)
+  - Infrastructure failures (Terraform errors, Kubernetes deployment failures)
+  - Timeout signals (command timeouts, network timeouts, test timeouts)
+- **Information extraction**:
+  - Version numbers (package versions, tool versions, dependency versions)
+  - File paths (relative/absolute, platform-normalized)
+  - Configuration values (environment variables, config file values)
+  - Performance metrics (build times, test execution times, deployment durations)
+
+### Platform-Aware Real-time Output Processing
+
+```typescript
+interface UniversalOutputProcessor {
+  parseIncrementally(chunk: string, context: ProjectContext): ProcessedOutput;
+  extractMetrics(output: string, projectType: ProjectType): Metrics;
+  identifyErrors(output: string, platform: Platform): Error[];
+  suggestActions(output: string, context: ExecutionContext): Suggestion[];
+}
+
+interface ProjectContext {
+  type:
+    | "nodejs"
+    | "python"
+    | "java"
+    | "terraform"
+    | "gitops"
+    | "dotnet"
+    | "go"
+    | "rust";
+  platform: "windows" | "linux" | "macos";
+  shell: "powershell" | "cmd" | "bash" | "zsh" | "fish";
+  buildTool?:
+    | "npm"
+    | "yarn"
+    | "pnpm"
+    | "pip"
+    | "poetry"
+    | "maven"
+    | "gradle"
+    | "cargo"
+    | "go mod";
+}
+
+class UniversalTerminalOutputProcessor implements UniversalOutputProcessor {
+  parseIncrementally(chunk: string, context: ProjectContext): ProcessedOutput {
+    // Detect project-specific patterns
+    const patterns = this.getProjectPatterns(context.type);
+    const platformNormalizedChunk = this.normalizePlatformOutput(
+      chunk,
+      context.platform
+    );
+
+    return {
+      type: this.classifyOutput(platformNormalizedChunk, patterns),
+      content: this.extractContent(platformNormalizedChunk, context),
+      timestamp: new Date(),
+      actionRequired: this.requiresAction(platformNormalizedChunk, context),
+      platform: context.platform,
+      projectType: context.type,
+    };
+  }
+
+  private getProjectPatterns(projectType: string): OutputPattern[] {
+    const patterns: Record<string, OutputPattern[]> = {
+      nodejs: [
+        { pattern: /npm ERR!/, type: "error", action: "check_package_json" },
+        { pattern: /✓ \d+ passing/, type: "success", action: "continue" },
+        {
+          pattern: /\d+ failing/,
+          type: "error",
+          action: "review_test_failures",
+        },
+      ],
+      python: [
+        {
+          pattern: /ModuleNotFoundError/,
+          type: "error",
+          action: "install_dependencies",
+        },
+        { pattern: /\d+ passed/, type: "success", action: "continue" },
+        {
+          pattern: /FAILED.*::/,
+          type: "error",
+          action: "review_test_failures",
+        },
+      ],
+      java: [
+        { pattern: /BUILD SUCCESS/, type: "success", action: "continue" },
+        {
+          pattern: /BUILD FAILURE/,
+          type: "error",
+          action: "review_compilation_errors",
+        },
+        {
+          pattern: /Tests run: \d+, Failures: 0/,
+          type: "success",
+          action: "continue",
+        },
+      ],
+      terraform: [
+        {
+          pattern: /Plan: \d+ to add, \d+ to change, \d+ to destroy/,
+          type: "info",
+          action: "review_changes",
+        },
+        { pattern: /Apply complete!/, type: "success", action: "continue" },
+        { pattern: /Error:/, type: "error", action: "review_terraform_config" },
+      ],
+      gitops: [
+        {
+          pattern: /deployment ".*" successfully rolled out/,
+          type: "success",
+          action: "continue",
+        },
+        {
+          pattern: /error validating/,
+          type: "error",
+          action: "review_manifests",
+        },
+        {
+          pattern: /Warning:/,
+          type: "warning",
+          action: "review_kubernetes_warnings",
+        },
+      ],
+    };
+
+    return patterns[projectType] || [];
+  }
+}
+```
+
+## Universal Context-Aware Command Generation
+
+### Multi-Platform Environment Detection
+
+```powershell
+# Windows PowerShell - Comprehensive project detection
+function Detect-ProjectEnvironment {
+    $projectInfo = @{
+        Type = @()
+        Platform = "Windows"
+        Shell = $PSVersionTable.PSVersion
+        BuildTools = @()
+        PackageManagers = @()
+    }
+
+    # Node.js projects
+    if (Test-Path "package.json") {
+        $projectInfo.Type += "nodejs"
+        if (Test-Path "yarn.lock") { $projectInfo.PackageManagers += "yarn" }
+        elseif (Test-Path "pnpm-lock.yaml") { $projectInfo.PackageManagers += "pnpm" }
+        else { $projectInfo.PackageManagers += "npm" }
+
+        if (Test-Path "tsconfig.json") { $projectInfo.Type += "typescript" }
+        if (Test-Path "next.config.js") { $projectInfo.Type += "nextjs" }
+        if (Test-Path "vite.config.*") { $projectInfo.Type += "vite" }
+    }
+
+    # Python projects
+    if (Test-Path "requirements.txt" -or Test-Path "pyproject.toml" -or Test-Path "setup.py") {
+        $projectInfo.Type += "python"
+        if (Test-Path "poetry.lock") { $projectInfo.PackageManagers += "poetry" }
+        if (Test-Path "Pipfile") { $projectInfo.PackageManagers += "pipenv" }
+        if (Test-Path "conda.yaml") { $projectInfo.PackageManagers += "conda" }
+        if (Test-Path "requirements.txt") { $projectInfo.PackageManagers += "pip" }
+
+        if (Test-Path "venv" -or Test-Path ".venv") { $projectInfo.VirtualEnv = $true }
+    }
+
+    # Java projects
+    if (Test-Path "pom.xml") {
+        $projectInfo.Type += "java"
+        $projectInfo.BuildTools += "maven"
+    }
+    if (Test-Path "build.gradle" -or Test-Path "build.gradle.kts") {
+        $projectInfo.Type += "java"
+        $projectInfo.BuildTools += "gradle"
+    }
+
+    # .NET projects
+    if (Test-Path "*.sln" -or Test-Path "*.csproj" -or Test-Path "*.fsproj" -or Test-Path "*.vbproj") {
+        $projectInfo.Type += "dotnet"
+        $projectInfo.BuildTools += "dotnet"
+    }
+
+    # Go projects
+    if (Test-Path "go.mod") {
+        $projectInfo.Type += "go"
+        $projectInfo.BuildTools += "go"
+    }
+
+    # Rust projects
+    if (Test-Path "Cargo.toml") {
+        $projectInfo.Type += "rust"
+        $projectInfo.BuildTools += "cargo"
+    }
+
+    # Terraform projects
+    if (Get-ChildItem "*.tf" -ErrorAction SilentlyContinue) {
+        $projectInfo.Type += "terraform"
+        $projectInfo.BuildTools += "terraform"
+    }
+
+    # Kubernetes/GitOps
+    if (Test-Path "kustomization.yaml" -or Test-Path "Chart.yaml" -or (Get-ChildItem "*.yaml" | Where-Object { (Get-Content $_.FullName) -match "apiVersion.*kind" })) {
+        $projectInfo.Type += "gitops"
+        if (Test-Path "Chart.yaml") { $projectInfo.BuildTools += "helm" }
+        if (Test-Path "kustomization.yaml") { $projectInfo.BuildTools += "kustomize" }
+    }
+
+    return $projectInfo
+}
+```
+
+```bash
+# Unix/Linux/macOS - Comprehensive project detection
+detect_project_environment() {
+    local project_types=()
+    local build_tools=()
+    local package_managers=()
+    local platform=$(uname -s)
+    local shell_type="${SHELL##*/}"
+
+    # Node.js projects
+    if [[ -f "package.json" ]]; then
+        project_types+=("nodejs")
+        [[ -f "yarn.lock" ]] && package_managers+=("yarn")
+        [[ -f "pnpm-lock.yaml" ]] && package_managers+=("pnpm")
+        [[ ! -f "yarn.lock" && ! -f "pnpm-lock.yaml" ]] && package_managers+=("npm")
+
+        [[ -f "tsconfig.json" ]] && project_types+=("typescript")
+        [[ -f "next.config.js" ]] && project_types+=("nextjs")
+        [[ -f "vite.config."* ]] && project_types+=("vite")
+    fi
+
+    # Python projects
+    if [[ -f "requirements.txt" || -f "pyproject.toml" || -f "setup.py" ]]; then
+        project_types+=("python")
+        [[ -f "poetry.lock" ]] && package_managers+=("poetry")
+        [[ -f "Pipfile" ]] && package_managers+=("pipenv")
+        [[ -f "conda.yaml" ]] && package_managers+=("conda")
+        [[ -f "requirements.txt" ]] && package_managers+=("pip")
+    fi
+
+    # Java projects
+    [[ -f "pom.xml" ]] && { project_types+=("java"); build_tools+=("maven"); }
+    [[ -f "build.gradle" || -f "build.gradle.kts" ]] && { project_types+=("java"); build_tools+=("gradle"); }
+
+    # Go projects
+    [[ -f "go.mod" ]] && { project_types+=("go"); build_tools+=("go"); }
+
+    # Rust projects
+    [[ -f "Cargo.toml" ]] && { project_types+=("rust"); build_tools+=("cargo"); }
+
+    # Terraform projects
+    [[ $(find . -maxdepth 1 -name "*.tf" -type f | head -1) ]] && {
+        project_types+=("terraform"); build_tools+=("terraform");
+    }
+
+    # Kubernetes/GitOps
+    if [[ -f "kustomization.yaml" || -f "Chart.yaml" ]] ||
+       grep -l "apiVersion.*kind" *.yaml 2>/dev/null | head -1; then
+        project_types+=("gitops")
+        [[ -f "Chart.yaml" ]] && build_tools+=("helm")
+        [[ -f "kustomization.yaml" ]] && build_tools+=("kustomize")
+    fi
+
+    echo "Project Types: ${project_types[*]}"
+    echo "Build Tools: ${build_tools[*]}"
+    echo "Package Managers: ${package_managers[*]}"
+    echo "Platform: $platform"
+    echo "Shell: $shell_type"
+}
+```
+
+### Universal Command Optimization
+
+- **Use platform-native tools** when available (PowerShell cmdlets vs external commands on Windows, built-in Unix tools)
+- **Leverage project-specific aliases** and shortcuts for efficiency across all project types
+- **Combine commands intelligently** to reduce execution time while maintaining cross-platform compatibility
+- **Cache results appropriately** to avoid repeated operations, considering platform-specific caching mechanisms
+- **Normalize path handling** for cross-platform compatibility (forward slashes vs backslashes)
+- **Handle platform-specific quirks** (case sensitivity, path separators, environment variables)
+
+#### Platform-Specific Command Optimization Examples
+
+```powershell
+# Windows PowerShell - Leverage .NET objects and cmdlets
+# Instead of: Get-Content large_file.log | findstr "ERROR"
+Get-Content large_file.log | Where-Object { $_ -match "ERROR" } | Select-Object -First 100
+
+# Use PowerShell's superior object handling
+Get-ChildItem -Path $path -Recurse -Filter "*.log" |
+    Where-Object { $_.LastWriteTime -gt (Get-Date).AddDays(-7) } |
+    Sort-Object LastWriteTime -Descending
+```
+
+```bash
+# Unix/Linux/macOS - Leverage native tools and pipes
+# Efficient command combinations for log analysis
+find . -name "*.log" -type f -mtime -7 -exec grep -l "ERROR" {} \; |
+    head -10 |
+    xargs ls -la
+
+# Use native tools for performance
+ps aux |
+    awk '$3 > 10.0 {print $11, $3, $4}' |
+    sort -k2 -nr |
+    head -10
+```
+
+```bash
+# Cross-platform project commands with fallbacks
+# Node.js - detect package manager and use appropriate commands
+if command -v yarn &> /dev/null && [[ -f "yarn.lock" ]]; then
+    yarn install && yarn build && yarn test
+elif command -v pnpm &> /dev/null && [[ -f "pnpm-lock.yaml" ]]; then
+    pnpm install && pnpm build && pnpm test
+else
+    npm install && npm run build && npm test
+fi
+
+# Python - detect environment and package manager
+if [[ -f "poetry.lock" ]]; then
+    poetry install && poetry run pytest
+elif [[ -f "Pipfile" ]]; then
+    pipenv install && pipenv run pytest
+else
+    pip install -r requirements.txt && python -m pytest
+fi
+```
+
+## Advanced Multi-Project Output Analysis
+
+### Universal Log Analysis Patterns
+
+```powershell
+# Windows PowerShell - Project-specific error pattern extraction
+$universalErrorPatterns = @{
+    "nodejs" = @(
+        "npm ERR!.*",
+        "Error:.*at.*\.js:\d+",
+        "TypeError:.*",
+        "ReferenceError:.*",
+        "SyntaxError:.*"
+    )
+    "python" = @(
+        "ERROR\s*:\s*(.+)",
+        "Traceback \(most recent call last\):",
+        "ModuleNotFoundError:.*",
+        "ImportError:.*",
+        "SyntaxError:.*"
+    )
+    "java" = @(
+        "\[ERROR\].*",
+        "Exception in thread.*",
+        "java\.lang\..*Exception:",
+        "BUILD FAILURE",
+        "Compilation failure"
+    )
+    "terraform" = @(
+        "Error:.*",
+        "╷.*Error:.*",
+        "Planning failed.*",
+        "Invalid configuration.*"
+    )
+    "gitops" = @(
+        "error validating.*",
+        "Error from server.*",
+        "Failed to.*",
+        "Warning:.*deprecated.*"
+    )
+}
+
+function Extract-ProjectErrors {
+    param(
+        [string]$LogPath,
+        [string]$ProjectType,
+        [int]$MaxLines = 100
+    )
+
+    $patterns = $universalErrorPatterns[$ProjectType]
+    if (-not $patterns) { $patterns = $universalErrorPatterns["generic"] }
+
+    $errorLines = Get-Content $LogPath |
+        Where-Object {
+            foreach ($pattern in $patterns) {
+                if ($_ -match $pattern) { return $true }
+            }
+            return $false
+        } |
+        Select-Object -First $MaxLines
+
+    return $errorLines
+}
+
+# Performance metrics extraction for different project types
+function Extract-PerformanceMetrics {
+    param([string]$LogPath, [string]$ProjectType)
+
+    switch ($ProjectType) {
+        "nodejs" {
+            # Extract test execution times, build times
+            $testTime = Get-Content $LogPath |
+                Where-Object { $_ -match "Test Suites:.*Time:" } |
+                ForEach-Object { [regex]::Match($_, "(\d+\.?\d*)s").Groups[1].Value }
+        }
+        "python" {
+            # Extract pytest execution times
+            $testTime = Get-Content $LogPath |
+                Where-Object { $_ -match "=+ .* in (\d+\.?\d+)s =+" } |
+                ForEach-Object { [regex]::Match($_, "(\d+\.?\d+)s").Groups[1].Value }
+        }
+        "java" {
+            # Extract Maven/Gradle build times
+            $buildTime = Get-Content $LogPath |
+                Where-Object { $_ -match "Total time:|BUILD SUCCESSFUL in" } |
+                ForEach-Object { [regex]::Match($_, "(\d+\.?\d+)\s*(s|min)").Groups[1].Value }
+        }
+        "terraform" {
+            # Extract plan/apply execution times
+            $planTime = Get-Content $LogPath |
+                Where-Object { $_ -match "Plan:|Apply complete!" } |
+                ForEach-Object {
+                    if ($_ -match "Apply complete! Resources: \d+ added, \d+ changed, \d+ destroyed") {
+                        "Apply completed"
+                    }
+                }
+        }
+    }
+}
+```
+
+```bash
+# Unix/Linux/macOS - Universal log analysis
+declare -A error_patterns=(
+    ["nodejs"]="npm ERR!|Error:.*\.js:[0-9]+|TypeError:|ReferenceError:|SyntaxError:"
+    ["python"]="ERROR:|Traceback|ModuleNotFoundError:|ImportError:|SyntaxError:"
+    ["java"]="\[ERROR\]|Exception in thread|java\.lang\..*Exception:|BUILD FAILURE"
+    ["terraform"]="Error:|Planning failed|Invalid configuration"
+    ["gitops"]="error validating|Error from server|Failed to|Warning:.*deprecated"
+)
+
+extract_project_errors() {
+    local log_path="$1"
+    local project_type="$2"
+    local max_lines="${3:-100}"
+
+    local pattern="${error_patterns[$project_type]:-ERROR|FATAL|Exception}"
+
+    grep -E "$pattern" "$log_path" | head -n "$max_lines"
+}
+
+# Performance metrics extraction
+extract_performance_metrics() {
+    local log_path="$1"
+    local project_type="$2"
+
+    case "$project_type" in
+        "nodejs")
+            # Extract Node.js test and build times
+            grep -E "Test Suites:.*Time:|Tests:.*Time:" "$log_path" |
+                sed -n 's/.*Time:[^0-9]*\([0-9.]*\)s.*/\1/p'
+            ;;
+        "python")
+            # Extract pytest execution times
+            grep -E "=+ .* in [0-9.]+s =+" "$log_path" |
+                sed -n 's/.*in \([0-9.]*\)s.*/\1/p'
+            ;;
+        "java")
+            # Extract Maven/Gradle build times
+            grep -E "Total time:|BUILD SUCCESSFUL in" "$log_path" |
+                sed -n 's/.*\([0-9.]*\) *[sm].*/\1/p'
+            ;;
+        "terraform")
+            # Extract Terraform execution summary
+            grep -E "Plan:|Apply complete!" "$log_path" | tail -1
+            ;;
+        "gitops")
+            # Extract Kubernetes deployment status
+            grep -E "deployment.*successfully rolled out|rollout status" "$log_path" | tail -1
+            ;;
+    esac
+}
+```
+
+### Metrics Collection
+
+- **Performance metrics**: Response times, throughput, resource usage
+- **Error rates**: Frequency, types, patterns
+- **Success indicators**: Completion rates, validation results
+- **Trend analysis**: Performance over time, degradation patterns
+
+## Universal Terminal Session Management
+
+### Cross-Platform Session State Tracking
+
+```typescript
+interface UniversalTerminalSession {
+  id: string;
+  platform: "windows" | "linux" | "macos";
+  shell: "powershell" | "cmd" | "bash" | "zsh" | "fish";
+  workingDirectory: string;
+  environmentVariables: Record<string, string>;
+  commandHistory: CommandExecution[];
+  activeProcesses: Process[];
+  projectContext: ProjectContext;
+  lastExecutionTime: Date;
+  sessionStartTime: Date;
+  totalCommandsExecuted: number;
+  failedCommandsCount: number;
+}
+
+interface CommandExecution {
+  command: string;
+  sanitizedCommand: string;
+  startTime: Date;
+  endTime?: Date;
+  exitCode?: number;
+  output: string[];
+  errors: string[];
+  warnings: string[];
+  duration?: number;
+  platform: string;
+  shell: string;
+  projectType: string;
+  workingDirectory: string;
+  environmentSnapshot: Record<string, string>;
+}
+
+interface ProjectContext {
+  type:
+    | "nodejs"
+    | "python"
+    | "java"
+    | "terraform"
+    | "gitops"
+    | "dotnet"
+    | "go"
+    | "rust"
+    | "generic";
+  subtype?:
+    | "react"
+    | "vue"
+    | "angular"
+    | "nextjs"
+    | "django"
+    | "flask"
+    | "spring"
+    | "maven"
+    | "gradle";
+  packageManagers: string[];
+  buildTools: string[];
+  testFrameworks: string[];
+  configFiles: string[];
+  hasTests: boolean;
+  hasDocumentation: boolean;
+  isMonorepo: boolean;
+  dependencies: ProjectDependency[];
+}
+
+class UniversalSessionManager {
+  private sessions: Map<string, UniversalTerminalSession> = new Map();
+
+  createSession(
+    platform: string,
+    shell: string,
+    workingDir: string
+  ): UniversalTerminalSession {
+    const session: UniversalTerminalSession = {
+      id: this.generateSessionId(),
+      platform: platform as any,
+      shell: shell as any,
+      workingDirectory: workingDir,
+      environmentVariables: this.captureEnvironment(),
+      commandHistory: [],
+      activeProcesses: [],
+      projectContext: this.detectProjectContext(workingDir),
+      lastExecutionTime: new Date(),
+      sessionStartTime: new Date(),
+      totalCommandsExecuted: 0,
+      failedCommandsCount: 0,
+    };
+
+    this.sessions.set(session.id, session);
+    return session;
+  }
+
+  private detectProjectContext(workingDir: string): ProjectContext {
+    const context: ProjectContext = {
+      type: "generic",
+      packageManagers: [],
+      buildTools: [],
+      testFrameworks: [],
+      configFiles: [],
+      hasTests: false,
+      hasDocumentation: false,
+      isMonorepo: false,
+      dependencies: [],
+    };
+
+    // Multi-language detection logic
+    const files = this.listDirectoryFiles(workingDir);
+
+    // Node.js/JavaScript/TypeScript
+    if (files.includes("package.json")) {
+      context.type = "nodejs";
+      context.packageManagers.push(
+        files.includes("yarn.lock")
+          ? "yarn"
+          : files.includes("pnpm-lock.yaml")
+          ? "pnpm"
+          : "npm"
+      );
+
+      if (files.includes("tsconfig.json")) context.subtype = "typescript";
+      if (files.includes("next.config.js")) context.subtype = "nextjs";
+      if (files.includes("angular.json")) context.subtype = "angular";
+      if (files.includes("vue.config.js")) context.subtype = "vue";
+
+      context.testFrameworks = files.filter((f) =>
+        [
+          "jest.config.js",
+          "vitest.config.js",
+          "cypress.json",
+          "playwright.config.js",
+        ].includes(f)
+      );
+    }
+
+    // Python
+    if (
+      files.some((f) =>
+        [
+          "requirements.txt",
+          "pyproject.toml",
+          "setup.py",
+          "poetry.lock",
+        ].includes(f)
+      )
+    ) {
+      context.type = "python";
+      if (files.includes("poetry.lock")) context.packageManagers.push("poetry");
+      if (files.includes("Pipfile")) context.packageManagers.push("pipenv");
+      if (files.includes("requirements.txt"))
+        context.packageManagers.push("pip");
+      if (files.includes("manage.py")) context.subtype = "django";
+      if (files.includes("app.py")) context.subtype = "flask";
+
+      context.testFrameworks = files.filter((f) =>
+        ["pytest.ini", "tox.ini", "conftest.py"].includes(f)
+      );
+    }
+
+    // Java
+    if (files.includes("pom.xml")) {
+      context.type = "java";
+      context.subtype = "maven";
+      context.buildTools.push("maven");
+    }
+    if (files.some((f) => f.startsWith("build.gradle"))) {
+      context.type = "java";
+      context.subtype = "gradle";
+      context.buildTools.push("gradle");
+    }
+
+    // .NET
+    if (files.some((f) => f.endsWith(".sln") || f.endsWith(".csproj"))) {
+      context.type = "dotnet";
+      context.buildTools.push("dotnet");
+    }
+
+    // Go
+    if (files.includes("go.mod")) {
+      context.type = "go";
+      context.buildTools.push("go");
+    }
+
+    // Rust
+    if (files.includes("Cargo.toml")) {
+      context.type = "rust";
+      context.buildTools.push("cargo");
+    }
+
+    // Terraform
+    if (files.some((f) => f.endsWith(".tf"))) {
+      context.type = "terraform";
+      context.buildTools.push("terraform");
+    }
+
+    // GitOps/Kubernetes
+    if (
+      files.some((f) => ["kustomization.yaml", "Chart.yaml"].includes(f)) ||
+      files.some(
+        (f) => f.endsWith(".yaml") && this.containsKubernetesResources(f)
+      )
+    ) {
+      context.type = "gitops";
+      if (files.includes("Chart.yaml")) context.buildTools.push("helm");
+      if (files.includes("kustomization.yaml"))
+        context.buildTools.push("kustomize");
+    }
+
+    // Generic checks
+    context.hasTests = files.some(
+      (f) =>
+        f.includes("test") ||
+        ["tests/", "spec/", "__tests__/"].some((dir) => f.startsWith(dir))
+    );
+    context.hasDocumentation = files.some((f) =>
+      ["README.md", "docs/", "documentation/"].some((doc) => f.includes(doc))
+    );
+    context.isMonorepo = files.some((f) =>
+      [
+        "lerna.json",
+        "nx.json",
+        "workspace.json",
+        "pnpm-workspace.yaml",
+      ].includes(f)
+    );
+
+    return context;
+  }
+}
+```
+
+### Universal Context Preservation
+
+- **Maintain working directory** across command sequences with proper path normalization
+- **Preserve environment variables** set during execution with platform-specific handling
+- **Track active processes** and their states across different shells and platforms
+- **Remember previous outputs** for reference in subsequent commands with intelligent caching
+- **Handle platform-specific session persistence**:
+  - Windows: PowerShell profiles, registry settings, environment variables
+  - Unix/Linux/macOS: Shell profiles (.bashrc, .zshrc), environment exports
+- **Project-specific session state**:
+  - Node.js: npm/yarn/pnpm cache, node_modules state, environment variables
+  - Python: Virtual environment activation state, installed packages, PYTHONPATH
+  - Java: JAVA_HOME, classpath, Maven/Gradle daemon state
+  - Terraform: Provider authentication, state file location, workspace context
+  - Kubernetes: Current context, namespace, authentication tokens
+
+## Universal Error Recovery Patterns
+
+### Intelligent Retry Logic with Project Awareness
+
+```powershell
+# Windows PowerShell - Universal retry with project context
+function Invoke-UniversalCommandWithRetry {
+    param(
+        [string]$Command,
+        [string]$ProjectType,
+        [string]$Platform = "Windows",
+        [int]$MaxRetries = 3,
+        [int]$DelaySeconds = 5,
+        [hashtable]$ProjectSpecificOptions = @{}
+    )
+
+    $retryStrategies = @{
+        "nodejs" = @{
+            RetryableErrors = @("ECONNRESET", "ETIMEDOUT", "network", "registry")
+            AlternativeCommands = @("npm cache clean --force", "yarn cache clean")
+            BackoffMultiplier = 2
+        }
+        "python" = @{
+            RetryableErrors = @("ConnectionError", "ReadTimeoutError", "ModuleNotFoundError")
+            AlternativeCommands = @("pip cache purge", "pip install --upgrade pip")
+            BackoffMultiplier = 1.5
+        }
+        "java" = @{
+            RetryableErrors = @("Connection refused", "UnknownHostException", "BUILD FAILURE")
+            AlternativeCommands = @("mvn dependency:purge-local-repository", "./gradlew --refresh-dependencies")
+            BackoffMultiplier = 2
+        }
+        "terraform" = @{
+            RetryableErrors = @("timeout", "connection", "rate limit", "throttling")
+            AlternativeCommands = @("terraform refresh", "terraform init -reconfigure")
+            BackoffMultiplier = 3
+        }
+        "gitops" = @{
+            RetryableErrors = @("connection refused", "timeout", "temporary failure")
+            AlternativeCommands = @("kubectl config use-context", "kubectl auth check")
+            BackoffMultiplier = 2
+        }
+    }
+
+    $strategy = $retryStrategies[$ProjectType]
+    if (-not $strategy) { $strategy = $retryStrategies["generic"] }
+
+    for ($attempt = 1; $attempt -le $MaxRetries; $attempt++) {
+        try {
+            Write-Host "Attempt $attempt of $MaxRetries for: $Command" -ForegroundColor Yellow
+
+            $result = Invoke-Expression $Command
+            $exitCode = $LASTEXITCODE
+
+            if ($exitCode -eq 0) {
+                Write-Host "Command succeeded on attempt $attempt" -ForegroundColor Green
+                return $result
+            }
+
+            # Check if error is retryable for this project type
+            $isRetryable = $false
+            if ($strategy.RetryableErrors) {
+                foreach ($errorPattern in $strategy.RetryableErrors) {
+                    if ($result -match $errorPattern) {
+                        $isRetryable = $true
+                        break
+                    }
+                }
+            }
+
+            if (-not $isRetryable -and $attempt -lt $MaxRetries) {
+                Write-Warning "Non-retryable error detected, skipping remaining attempts"
+                break
+            }
+
+        }
+        catch {
+            Write-Warning "Attempt $attempt failed: $($_.Exception.Message)"
+
+            # Try alternative commands if available
+            if ($strategy.AlternativeCommands -and $attempt -eq [math]::Floor($MaxRetries / 2)) {
+                foreach ($altCommand in $strategy.AlternativeCommands) {
+                    Write-Host "Trying alternative command: $altCommand" -ForegroundColor Cyan
+                    try {
+                        Invoke-Expression $altCommand | Out-Null
+                    }
+                    catch {
+                        Write-Warning "Alternative command failed: $altCommand"
+                    }
+                }
+            }
+        }
+
+        if ($attempt -lt $MaxRetries) {
+            $delay = $DelaySeconds * [math]::Pow($strategy.BackoffMultiplier, $attempt - 1)
+            Write-Host "Waiting $delay seconds before retry..." -ForegroundColor Yellow
+            Start-Sleep -Seconds $delay
+        }
+    }
+
+    throw "Command failed after $MaxRetries attempts: $Command"
+}
+```
+
+```bash
+# Unix/Linux/macOS - Universal retry with project context
+invoke_universal_command_with_retry() {
+    local command="$1"
+    local project_type="$2"
+    local platform="$3"
+    local max_retries="${4:-3}"
+    local base_delay="${5:-5}"
+
+    # Project-specific retry strategies
+    declare -A retry_strategies=(
+        ["nodejs_retryable"]="ECONNRESET|ETIMEDOUT|network|registry"
+        ["nodejs_alternatives"]="npm cache clean --force;yarn cache clean"
+        ["nodejs_backoff"]="2"
+
+        ["python_retryable"]="ConnectionError|ReadTimeoutError|ModuleNotFoundError"
+        ["python_alternatives"]="pip cache purge;pip install --upgrade pip"
+        ["python_backoff"]="1.5"
+
+        ["java_retryable"]="Connection refused|UnknownHostException|BUILD FAILURE"
+        ["java_alternatives"]="mvn dependency:purge-local-repository;./gradlew --refresh-dependencies"
+        ["java_backoff"]="2"
+
+        ["terraform_retryable"]="timeout|connection|rate limit|throttling"
+        ["terraform_alternatives"]="terraform refresh;terraform init -reconfigure"
+        ["terraform_backoff"]="3"
+
+        ["gitops_retryable"]="connection refused|timeout|temporary failure"
+        ["gitops_alternatives"]="kubectl config use-context;kubectl auth check"
+        ["gitops_backoff"]="2"
+    )
+
+    local retryable_pattern="${retry_strategies[${project_type}_retryable]:-error|failed|timeout}"
+    local alternatives="${retry_strategies[${project_type}_alternatives]:-}"
+    local backoff_multiplier="${retry_strategies[${project_type}_backoff]:-2}"
+
+    for ((attempt=1; attempt<=max_retries; attempt++)); do
+        echo "Attempt $attempt of $max_retries for: $command"
+
+        if output=$(eval "$command" 2>&1); then
+            echo "Command succeeded on attempt $attempt"
+            echo "$output"
+            return 0
+        fi
+
+        local exit_code=$?
+        echo "Attempt $attempt failed with exit code $exit_code"
+
+        # Check if error is retryable
+        if [[ "$output" =~ $retryable_pattern ]]; then
+            echo "Retryable error detected"
+        elif [[ $attempt -lt $max_retries ]]; then
+            echo "Non-retryable error, skipping remaining attempts"
+            break
+        fi
+
+        # Try alternatives at mid-point
+        if [[ -n "$alternatives" && $attempt -eq $((max_retries / 2)) ]]; then
+            IFS=';' read -ra alt_commands <<< "$alternatives"
+            for alt_cmd in "${alt_commands[@]}"; do
+                echo "Trying alternative command: $alt_cmd"
+                eval "$alt_cmd" >/dev/null 2>&1 || echo "Alternative command failed: $alt_cmd"
+            done
+        fi
+
+        if [[ $attempt -lt $max_retries ]]; then
+            local delay=$(echo "$base_delay * ($backoff_multiplier ^ ($attempt - 1))" | bc -l 2>/dev/null || echo $((base_delay * attempt)))
+            echo "Waiting ${delay%.*} seconds before retry..."
+            sleep "${delay%.*}"
+        fi
+    done
+
+    echo "Command failed after $max_retries attempts: $command" >&2
+    return 1
+}
+```
+
+### Universal Fallback Strategies
+
+- **Alternative commands**: Use different tools if primary fails, with project-specific alternatives
+  - Node.js: npm ↔ yarn ↔ pnpm, webpack ↔ vite ↔ parcel
+  - Python: pip ↔ poetry ↔ conda, pytest ↔ unittest ↔ nose2
+  - Java: Maven ↔ Gradle, OpenJDK ↔ Oracle JDK
+  - Terraform: terraform ↔ terragrunt ↔ pulumi
+  - GitOps: kubectl ↔ helm ↔ kustomize
+- **Graceful degradation**: Continue with reduced functionality when full features unavailable
+- **User intervention prompts**: Request manual resolution when automated recovery fails
+- **State recovery mechanisms**: Restore previous working state with platform-specific backup strategies
+- **Cross-platform compatibility fallbacks**: Adapt commands when tools are unavailable on specific platforms
+
+## Universal Output Visualization and Reporting
+
+### Comprehensive Structured Reporting
+
+```typescript
+interface UniversalExecutionReport {
+  summary: ExecutionSummary;
+  platform: PlatformInfo;
+  projectContext: ProjectContext;
+  commands: CommandExecution[];
+  errors: ClassifiedError[];
+  warnings: ClassifiedWarning[];
+  recommendations: ProjectSpecificRecommendation[];
+  performanceMetrics: PerformanceMetrics;
+  securityFindings: SecurityFinding[];
+  timelineAnalysis: TimelineAnalysis;
+}
+
+interface ExecutionSummary {
+  totalCommands: number;
+  successfulCommands: number;
+  failedCommands: number;
+  warningCommands: number;
+  totalDuration: number;
+  averageCommandDuration: number;
+  projectType: string;
+  platformOptimizationApplied: boolean;
+  retryCount: number;
+  fallbacksUsed: string[];
+}
+
+interface PlatformInfo {
+  operatingSystem: "windows" | "linux" | "macos";
+  shell: string;
+  shellVersion: string;
+  availableTools: string[];
+  missingRecommendedTools: string[];
+  environmentVariables: Record<string, string>;
+  workingDirectory: string;
+  permissions: string[];
+}
+
+interface ClassifiedError {
+  type:
+    | "compilation"
+    | "runtime"
+    | "network"
+    | "permission"
+    | "configuration"
+    | "dependency";
+  severity: "low" | "medium" | "high" | "critical";
+  message: string;
+  command: string;
+  timestamp: Date;
+  projectSpecific: boolean;
+  suggestedFix: string;
+  documentationLink?: string;
+  platformSpecific: boolean;
+}
+
+interface ProjectSpecificRecommendation {
+  category: "performance" | "security" | "maintainability" | "compatibility";
+  priority: "low" | "medium" | "high";
+  title: string;
+  description: string;
+  projectType: string;
+  platform: string;
+  implementationSteps: string[];
+  estimatedImpact: string;
+  relatedCommands: string[];
+}
+
+class UniversalReportGenerator {
+  generateExecutionReport(
+    session: UniversalTerminalSession
+  ): UniversalExecutionReport {
+    return {
+      summary: this.calculateUniversalSummary(session),
+      platform: this.analyzePlatformInfo(session),
+      projectContext: session.projectContext,
+      commands: session.commandHistory,
+      errors: this.classifyErrors(session),
+      warnings: this.classifyWarnings(session),
+      recommendations: this.generateProjectRecommendations(session),
+      performanceMetrics: this.analyzePerformance(session),
+      securityFindings: this.analyzeSecurityFindings(session),
+      timelineAnalysis: this.analyzeTimeline(session),
+    };
+  }
+
+  private generateProjectRecommendations(
+    session: UniversalTerminalSession
+  ): ProjectSpecificRecommendation[] {
+    const recommendations: ProjectSpecificRecommendation[] = [];
+    const projectType = session.projectContext.type;
+    const platform = session.platform;
+
+    // Node.js specific recommendations
+    if (projectType === "nodejs") {
+      if (
+        !session.commandHistory.some((cmd) => cmd.command.includes("npm audit"))
+      ) {
+        recommendations.push({
+          category: "security",
+          priority: "high",
+          title: "Run Security Audit",
+          description: "No security audit detected in command history",
+          projectType: "nodejs",
+          platform: "cross-platform",
+          implementationSteps: ["npm audit", "npm audit fix --force"],
+          estimatedImpact: "Identify and fix security vulnerabilities",
+          relatedCommands: ["npm audit", "yarn audit", "pnpm audit"],
+        });
+      }
+
+      if (
+        platform === "windows" &&
+        !session.environmentVariables["NODE_OPTIONS"]
+      ) {
+        recommendations.push({
+          category: "performance",
+          priority: "medium",
+          title: "Optimize Node.js Memory Usage",
+          description:
+            "Consider setting NODE_OPTIONS for better memory management on Windows",
+          projectType: "nodejs",
+          platform: "windows",
+          implementationSteps: [
+            '$env:NODE_OPTIONS="--max-old-space-size=4096"',
+          ],
+          estimatedImpact: "Prevent out-of-memory errors during builds",
+          relatedCommands: ["node --version", "npm run build"],
+        });
+      }
+    }
+
+    // Python specific recommendations
+    if (projectType === "python") {
+      if (
+        !session.commandHistory.some(
+          (cmd) =>
+            cmd.command.includes("pytest") ||
+            cmd.command.includes("python -m pytest")
+        )
+      ) {
+        recommendations.push({
+          category: "maintainability",
+          priority: "high",
+          title: "Add Automated Testing",
+          description: "No test execution detected in command history",
+          projectType: "python",
+          platform: "cross-platform",
+          implementationSteps: ["python -m pytest", "pytest --cov=src"],
+          estimatedImpact: "Ensure code quality and prevent regressions",
+          relatedCommands: ["pytest", "python -m unittest", "tox"],
+        });
+      }
+    }
+
+    // Add more project-specific recommendations...
+
+    return recommendations;
+  }
+}
+```
+
+### Universal Progress Tracking
+
+- **Command completion percentage** for long-running operations across all project types
+- **Real-time status updates** during execution with platform-specific indicators
+- **ETA calculations** based on historical data and project-specific benchmarks
+- **Resource usage monitoring** during execution (CPU, memory, disk, network)
+- **Cross-platform progress indicators**:
+  - Windows: PowerShell Write-Progress cmdlet, Windows Terminal integration
+  - Unix/Linux/macOS: Terminal escape sequences, progress bars with tools like `pv`
+- **Project-specific progress tracking**:
+  - Node.js: Package installation progress, build compilation progress
+  - Python: Package installation, test execution, code coverage
+  - Java: Maven/Gradle build phases, test execution, JAR creation
+  - Terraform: Plan generation, resource creation/modification/destruction
+  - GitOps: Pod startup, deployment rollout, service availability
+
+## Universal Integration with AI Context
+
+### Intelligent Command Suggestion System
+
+```typescript
+interface UniversalCommandSuggestion {
+  command: string;
+  confidence: number;
+  reasoning: string;
+  alternativeCommands: string[];
+  estimatedDuration: number;
+  riskAssessment: RiskLevel;
+  projectSpecific: boolean;
+  platformOptimized: boolean;
+  prerequisites: string[];
+  expectedOutputs: string[];
+  potentialIssues: PotentialIssue[];
+}
+
+interface PotentialIssue {
+  type: "performance" | "security" | "compatibility" | "dependency";
+  description: string;
+  likelihood: "low" | "medium" | "high";
+  mitigation: string;
+  platform?: string;
+  projectType?: string;
+}
+
+class UniversalIntelligentCommandSuggester {
+  suggestNextCommand(
+    context: UniversalExecutionContext
+  ): UniversalCommandSuggestion[] {
+    const suggestions = this.analyzeContext(context)
+      .generateProjectSpecificSuggestions()
+      .addPlatformOptimizations()
+      .rankByRelevance()
+      .addRiskAssessment()
+      .addPrerequisiteChecks();
+
+    return suggestions.slice(0, 5); // Return top 5 suggestions
+  }
+
+  private generateProjectSpecificSuggestions(
+    context: UniversalExecutionContext
+  ): UniversalCommandSuggestion[] {
+    const suggestions: UniversalCommandSuggestion[] = [];
+    const projectType = context.session.projectContext.type;
+    const lastCommand =
+      context.session.commandHistory[context.session.commandHistory.length - 1];
+
+    switch (projectType) {
+      case "nodejs":
+        if (lastCommand?.command.includes("npm install")) {
+          suggestions.push({
+            command: "npm run build",
+            confidence: 0.9,
+            reasoning: "Typically run build after installing dependencies",
+            alternativeCommands: ["yarn build", "pnpm build"],
+            estimatedDuration: 30,
+            riskAssessment: "low",
+            projectSpecific: true,
+            platformOptimized: true,
+            prerequisites: ["package.json exists", "build script defined"],
+            expectedOutputs: ["build artifacts in dist/ or build/"],
+            potentialIssues: [
+              {
+                type: "performance",
+                description: "Build may be slow on large projects",
+                likelihood: "medium",
+                mitigation: "Use NODE_OPTIONS to increase memory limit",
+              },
+            ],
+          });
+        }
+        break;
+
+      case "python":
+        if (lastCommand?.command.includes("pip install")) {
+          suggestions.push({
+            command: "python -m pytest",
+            confidence: 0.8,
+            reasoning: "Run tests after installing dependencies",
+            alternativeCommands: ["pytest", "python -m unittest"],
+            estimatedDuration: 15,
+            riskAssessment: "low",
+            projectSpecific: true,
+            platformOptimized: true,
+            prerequisites: ["tests directory exists", "pytest installed"],
+            expectedOutputs: ["test results and coverage report"],
+            potentialIssues: [],
+          });
+        }
+        break;
+
+      case "terraform":
+        if (lastCommand?.command.includes("terraform init")) {
+          suggestions.push({
+            command: "terraform plan",
+            confidence: 0.95,
+            reasoning: "Always run plan after init to review changes",
+            alternativeCommands: ["terraform plan -out=tfplan"],
+            estimatedDuration: 60,
+            riskAssessment: "medium",
+            projectSpecific: true,
+            platformOptimized: true,
+            prerequisites: [
+              "terraform configuration valid",
+              "provider credentials configured",
+            ],
+            expectedOutputs: ["execution plan showing proposed changes"],
+            potentialIssues: [
+              {
+                type: "security",
+                description: "Plan may expose sensitive values",
+                likelihood: "medium",
+                mitigation: "Review output before sharing",
+              },
+            ],
+          });
+        }
+        break;
+    }
+
+    return suggestions;
+  }
+}
+```
+
+### Universal Learning from Execution History
+
+- **Pattern recognition** in successful command sequences across different project types
+- **Error pattern learning** to avoid repeated mistakes with project-specific context
+- **Performance optimization** based on execution times and platform characteristics
+- **User preference learning** for command variations and platform-specific optimizations
+- **Cross-project knowledge transfer**: Apply successful patterns from one project type to similar scenarios
+- **Platform adaptation learning**: Optimize commands based on platform-specific performance characteristics
+- **Security pattern recognition**: Identify and prevent potentially dangerous command sequences
+- **Dependency pattern analysis**: Learn common dependency installation and update patterns
+
+## Universal Best Practices Summary
+
+### Cross-Platform Command Execution Guidelines
+
+1. **Always validate project context** before executing commands
+2. **Use platform-appropriate command syntax** and error handling
+3. **Implement comprehensive retry strategies** with project-specific awareness
+4. **Sanitize and validate all commands** regardless of source
+5. **Maintain detailed execution logs** for debugging and audit purposes
+6. **Apply least privilege principles** across all platforms and project types
+7. **Use environment-specific optimizations** while maintaining cross-platform compatibility
+8. **Implement intelligent fallback mechanisms** for when primary tools are unavailable
+9. **Monitor resource usage** and implement appropriate limits
+10. **Provide meaningful progress indicators** for long-running operations
+
+### Project-Specific Best Practices
+
+- **Node.js**: Use appropriate package manager, handle memory limits, cache dependencies
+- **Python**: Manage virtual environments, handle package conflicts, use appropriate test runners
+- **Java**: Configure JVM properly, use build tool optimizations, handle classpath issues
+- **Terraform**: Validate configurations, use state locking, implement proper credential management
+- **GitOps**: Validate manifests, use proper RBAC, implement gradual rollouts
+- **.NET**: Use appropriate framework versions, handle NuGet packages, optimize build configurations
+- **Go**: Manage modules properly, use build caching, handle cross-compilation
+- **Rust**: Optimize compilation settings, manage cargo features, handle target specifications
+
+This comprehensive terminal execution framework ensures reliable, secure, and efficient command execution across all platforms and programming languages while maintaining project-specific optimizations and intelligent automation capabilities.
+
+## Comprehensive Platform-Specific Optimizations
+
+### Windows PowerShell/Command Prompt Optimizations
+
+```powershell
+# Leverage PowerShell objects for superior data handling
+$runningServices = Get-Service |
+    Where-Object { $_.Status -eq 'Running' } |
+    Select-Object Name, Status, StartType, ServiceName |
+    Sort-Object Name
+
+# Efficient file operations with PowerShell pipeline
+$recentLogFiles = Get-ChildItem -Path $env:TEMP -Recurse -Filter "*.log" -ErrorAction SilentlyContinue |
+    Where-Object { $_.LastWriteTime -gt (Get-Date).AddDays(-7) } |
+    Sort-Object LastWriteTime -Descending |
+    Select-Object -First 10
+
+# Project-specific Windows optimizations
+# Node.js on Windows
+if (Test-Path "package.json") {
+    # Use Windows-optimized npm commands
+    $env:NODE_OPTIONS = "--max-old-space-size=4096"
+    npm config set script-shell powershell
+    npm install --production=false
+}
+
+# Python on Windows
+if (Test-Path "requirements.txt") {
+    # Handle Windows path issues and virtual environments
+    if (Test-Path "Scripts\activate.ps1") {
+        & ".\Scripts\activate.ps1"
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    }
+}
+
+# .NET optimizations
+if (Get-ChildItem "*.sln" -ErrorAction SilentlyContinue) {
+    # Use dotnet CLI with Windows-specific optimizations
+    dotnet restore --force
+    dotnet build --configuration Release --verbosity minimal
+    dotnet test --logger "console;verbosity=normal"
+}
+
+# Java on Windows (handle classpath issues)
+if (Test-Path "pom.xml") {
+    $env:MAVEN_OPTS = "-Xmx2048m -XX:MaxPermSize=512m"
+    mvn clean install -DskipTests=false -Dmaven.compiler.verbose=true
+}
+```
+
+### Unix/Linux/macOS Optimizations
+
+```bash
+# Leverage native Unix tools and efficient piping
+# Superior file and process handling
+recent_logs=$(find /var/log -name "*.log" -type f -mtime -7 2>/dev/null |
+    head -20 |
+    xargs ls -la |
+    sort -k6,7)
+
+# Process monitoring with native tools
+high_cpu_processes=$(ps aux |
+    awk '$3 > 10.0 {printf "%-20s %6.2f%% %6.2f%%\n", $11, $3, $4}' |
+    sort -k2 -nr |
+    head -10)
+
+# Project-specific Unix optimizations
+# Node.js optimizations
+if [[ -f "package.json" ]]; then
+    # Set optimal Node.js environment
+    export NODE_OPTIONS="--max-old-space-size=4096"
+    export NODE_ENV="${NODE_ENV:-development}"
+
+    # Detect and use optimal package manager
+    if [[ -f "yarn.lock" && -x "$(command -v yarn)" ]]; then
+        yarn install --frozen-lockfile
+        yarn build
+    elif [[ -f "pnpm-lock.yaml" && -x "$(command -v pnpm)" ]]; then
+        pnpm install --frozen-lockfile
+        pnpm build
+    else
+        npm ci
+        npm run build
+    fi
+fi
+
+# Python optimizations
+if [[ -f "requirements.txt" || -f "pyproject.toml" ]]; then
+    # Activate virtual environment if available
+    [[ -f "venv/bin/activate" ]] && source venv/bin/activate
+    [[ -f ".venv/bin/activate" ]] && source .venv/bin/activate
+
+    # Use optimal Python package installation
+    if [[ -f "poetry.lock" ]]; then
+        poetry install --no-dev
+        poetry run python -m pytest
+    elif [[ -f "Pipfile" ]]; then
+        pipenv install --dev
+        pipenv run pytest
+    else
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        python -m pytest -v
+    fi
+fi
+
+# Java optimizations
+if [[ -f "pom.xml" ]]; then
+    export MAVEN_OPTS="-Xmx2048m -XX:+UseG1GC"
+    mvn clean compile test-compile
+    mvn test -Dtest.parallel=4
+elif [[ -f "build.gradle" ]]; then
+    export GRADLE_OPTS="-Xmx2048m -XX:+UseG1GC"
+    ./gradlew clean build test --parallel --build-cache
+fi
+
+# Go optimizations
+if [[ -f "go.mod" ]]; then
+    export GOPROXY=https://proxy.golang.org,direct
+    export GOSUMDB=sum.golang.org
+    go mod download
+    go build -v ./...
+    go test -v -race ./...
+fi
+
+# Rust optimizations
+if [[ -f "Cargo.toml" ]]; then
+    export RUSTFLAGS="-C target-cpu=native"
+    cargo build --release
+    cargo test --release
+fi
+
+# Terraform optimizations
+if ls *.tf 1> /dev/null 2>&1; then
+    export TF_LOG=INFO
+    terraform init -upgrade
+    terraform validate
+    terraform plan -detailed-exitcode
+fi
+
+# Kubernetes/GitOps optimizations
+if [[ -f "kustomization.yaml" ]] || kubectl config current-context &>/dev/null; then
+    # Use efficient kubectl operations
+    kubectl config set-context --current --namespace="${NAMESPACE:-default}"
+
+    if [[ -f "kustomization.yaml" ]]; then
+        kubectl apply -k . --dry-run=client
+        kubectl apply -k .
+    fi
+
+    # Monitor deployment with timeout
+    kubectl rollout status deployment --timeout=300s
+fi
+```
+
+## Universal Security Considerations
+
+### Comprehensive Command Sanitization
+
+```typescript
+interface SecurityValidation {
+  command: string;
+  projectType: string;
+  platform: string;
+  riskLevel: "low" | "medium" | "high" | "critical";
+  allowedPatterns: RegExp[];
+  blockedPatterns: RegExp[];
+  requiresEscaping: boolean;
+}
+
+class UniversalCommandSanitizer {
+  private readonly dangerousPatterns = [
+    // Command injection patterns (cross-platform)
+    /[;&|`$(){}[\]\\]/g,
+    /\.\./g, // Directory traversal
+    /rm\s+-rf/gi, // Destructive deletion (Unix)
+    /Remove-Item.*-Recurse.*-Force/gi, // Destructive deletion (Windows)
+    /del\s+\/[sq]/gi, // Destructive deletion (Windows CMD)
+    /format\s+[a-z]:/gi, // Format drive (Windows)
+    /dd\s+if=/gi, // Disk operations (Unix)
+    /sudo\s+/gi, // Privilege escalation
+    /eval\s*\(/gi, // Code evaluation
+    /exec\s*\(/gi, // Code execution
+    />\s*\/dev\/(null|zero|random)/gi, // Device file access
+    /nc\s+-l/gi, // Netcat listener
+    /curl.*\|\s*(sh|bash|powershell)/gi, // Pipe to shell
+    /wget.*-O.*\|\s*(sh|bash)/gi, // Download and execute
+  ];
+
+  private readonly projectSpecificPatterns = {
+    nodejs: {
+      safe: [
+        /^npm\s+(install|ci|run|test|build|start)/,
+        /^yarn\s+(install|build|test|start)/,
+        /^pnpm\s+(install|build|test|run)/,
+        /^node\s+[\w\-./]+\.js$/,
+        /^npx\s+[\w\-@/]+/,
+      ],
+      dangerous: [
+        /npm\s+install.*--unsafe-perm/,
+        /npm\s+config\s+set/,
+        /yarn\s+global\s+add/,
+      ],
+    },
+    python: {
+      safe: [
+        /^python\s+-m\s+(pip|pytest|mypy|black|flake8)/,
+        /^pip\s+(install|uninstall|list|show)/,
+        /^poetry\s+(install|build|test|run)/,
+        /^pytest\s+/,
+        /^python\s+[\w\-./]+\.py$/,
+      ],
+      dangerous: [
+        /pip\s+install.*--trusted-host/,
+        /python\s+-c\s+["'].*exec/,
+        /eval\s*\(/,
+      ],
+    },
+    java: {
+      safe: [
+        /^mvn\s+(clean|compile|test|package|install)/,
+        /^gradle\s+(clean|build|test|run)/,
+        /^\.\/gradlew\s+(clean|build|test)/,
+        /^java\s+-jar\s+[\w\-./]+\.jar$/,
+      ],
+      dangerous: [
+        /java.*-Djava\.security\.manager=.*$/,
+        /mvn\s+exec:java.*-Dexec\.args/,
+      ],
+    },
+    terraform: {
+      safe: [
+        /^terraform\s+(init|validate|plan|apply|destroy)/,
+        /^terragrunt\s+(plan|apply|destroy)/,
+      ],
+      dangerous: [
+        /terraform\s+apply.*-auto-approve/,
+        /terraform\s+destroy.*-auto-approve/,
+      ],
+    },
+    gitops: {
+      safe: [
+        /^kubectl\s+(get|describe|logs|port-forward)/,
+        /^kubectl\s+apply\s+-f/,
+        /^helm\s+(install|upgrade|test|status)/,
+        /^kustomize\s+build/,
+      ],
+      dangerous: [
+        /kubectl\s+delete\s+.*--all/,
+        /kubectl\s+delete\s+namespace/,
+        /helm\s+delete.*--purge/,
+      ],
+    },
+  };
+
+  sanitizeCommand(command: string, context: ProjectContext): SanitizedCommand {
+    const trimmedCommand = command.trim();
+
+    // Check for dangerous patterns first
+    const isDangerous = this.dangerousPatterns.some((pattern) =>
+      pattern.test(trimmedCommand)
+    );
+
+    if (isDangerous) {
+      return {
+        command: "",
+        isSecure: false,
+        warnings: ["Command contains potentially dangerous patterns"],
+        blocked: true,
+        originalCommand: command,
+      };
+    }
+
+    // Project-specific validation
+    const projectPatterns = this.projectSpecificPatterns[context.type];
+    if (projectPatterns) {
+      const isSafe = projectPatterns.safe.some((pattern) =>
+        pattern.test(trimmedCommand)
+      );
+
+      const isProjectDangerous = projectPatterns.dangerous.some((pattern) =>
+        pattern.test(trimmedCommand)
+      );
+
+      if (isProjectDangerous) {
+        return {
+          command: "",
+          isSecure: false,
+          warnings: [
+            `Command contains dangerous patterns for ${context.type} projects`,
+          ],
+          blocked: true,
+          originalCommand: command,
+        };
+      }
+
+      if (!isSafe) {
+        return {
+          command: trimmedCommand,
+          isSecure: false,
+          warnings: [
+            `Command not in approved patterns for ${context.type} projects`,
+          ],
+          blocked: false,
+          requiresConfirmation: true,
+          originalCommand: command,
+        };
+      }
+    }
+
+    return {
+      command: this.escapeCommand(trimmedCommand, context.platform),
+      isSecure: true,
+      warnings: [],
+      blocked: false,
+      originalCommand: command,
+    };
+  }
+
+  private escapeCommand(command: string, platform: string): string {
+    if (platform === "windows") {
+      // Windows PowerShell/CMD escaping
+      return command.replace(/["']/g, "`$&");
+    } else {
+      // Unix shell escaping
+      return command.replace(/['"\\]/g, "\\$&");
+    }
+  }
+}
+```
+
+### Universal Privilege Management
+
+- **Use least privilege principle** for command execution across all platforms
+- **Validate permissions** before attempting privileged operations (sudo on Unix, Run as Administrator on Windows)
+- **Log privileged command usage** for comprehensive audit trails
+- **Implement approval workflows** for high-risk commands regardless of platform
+- **Use platform-specific privilege escalation safely**:
+  - Unix/Linux: `sudo` with specific commands, avoid `sudo su -`
+  - macOS: Prefer `sudo` over admin account switching
+  - Windows: Use `Run as Administrator` judiciously, prefer non-privileged PowerShell
+- **Project-specific privilege considerations**:
+  - Node.js: Avoid `npm install -g` without permission validation
+  - Python: Use virtual environments to avoid system-wide package installation
+  - Java: Avoid running as root/administrator unless absolutely necessary
+  - Terraform: Validate cloud provider permissions before infrastructure changes
+  - Kubernetes: Use RBAC and service accounts instead of cluster admin access
+
+### Environment Variable Security
+
+```powershell
+# Windows PowerShell - Secure environment handling
+function Set-SecureEnvironment {
+    param(
+        [hashtable]$Variables,
+        [string]$ProjectType
+    )
+
+    # Project-specific environment validation
+    $securePatterns = @{
+        "nodejs" = @("NODE_ENV", "PORT", "NODE_OPTIONS")
+        "python" = @("PYTHONPATH", "VIRTUAL_ENV", "PYTHON_ENV")
+        "java" = @("JAVA_HOME", "MAVEN_OPTS", "GRADLE_OPTS")
+        "terraform" = @("TF_VAR_.*", "TF_LOG")
+        "gitops" = @("KUBECONFIG", "KUBECTL_CONTEXT", "NAMESPACE")
+    }
+
+    foreach ($key in $Variables.Keys) {
+        # Validate against secure patterns
+        if ($key -match "(SECRET|PASSWORD|TOKEN|KEY|CREDENTIAL)") {
+            Write-Warning "Potentially sensitive variable detected: $key"
+            # Don't log sensitive values
+            $env:$key = $Variables[$key]
+        } else {
+            Write-Verbose "Setting environment variable: $key = $($Variables[$key])"
+            $env:$key = $Variables[$key]
+        }
+    }
+}
+```
+
+```bash
+# Unix/Linux/macOS - Secure environment handling
+set_secure_environment() {
+    local -A variables=("$@")
+
+    for key in "${!variables[@]}"; do
+        # Check for sensitive variables
+        if [[ "$key" =~ (SECRET|PASSWORD|TOKEN|KEY|CREDENTIAL) ]]; then
+            echo "Warning: Potentially sensitive variable detected: $key" >&2
+            export "$key"="${variables[$key]}"
+        else
+            echo "Setting environment variable: $key=${variables[$key]}"
+            export "$key"="${variables[$key]}"
+        fi
+    done
+}
+
+# Project-specific secure environment setup
+setup_project_environment() {
+    local project_type="$1"
+
+    case "$project_type" in
+        "nodejs")
+            export NODE_ENV="${NODE_ENV:-development}"
+            export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=4096}"
+            ;;
+        "python")
+            export PYTHONDONTWRITEBYTECODE=1
+            export PYTHONUNBUFFERED=1
+            ;;
+        "java")
+            export JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport"
+            ;;
+        "terraform")
+            export TF_IN_AUTOMATION=true
+            export TF_INPUT=false
+            ;;
+        "gitops")
+            export KUBECTL_CONTEXT="${KUBECTL_CONTEXT:-$(kubectl config current-context)}"
+            ;;
+    esac
+}
+
+            ;;
+    esac
+}
+```

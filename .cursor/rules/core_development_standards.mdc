@@ -1,0 +1,1049 @@
+---
+description: "Unified development standards and quality rules for consistent, maintainable code"
+globs: "**/*"
+alwaysApply: true
+---
+
+# Core Development Standards
+
+_Unified development standards and quality rules for consistent, maintainable code_
+
+## Purpose & Scope
+
+This document provides fundamental development standards that apply across all programming languages and frameworks. These standards are governed by the behavioral control framework and form the foundation for domain-specific implementations.
+
+**Behavioral Control:** See [Agent Control Framework](./agent_control_framework.mdc) for when to apply these standards, enforcement triggers, and context-aware decisions.
+
+**Specialization:** See [Specialized Domains](./specialized_domains.mdc) for domain-specific implementations (API, Security, Testing).
+
+---
+
+## Universal Code Quality Principles
+
+### Core Programming Principles
+
+```yaml
+UNIVERSAL_PRINCIPLES:
+  readability:
+    naming_conventions: "Use clear, descriptive names for variables, functions, and classes"
+    function_size: "Keep functions under 20 lines; extract larger logic into separate functions"
+    nesting_depth: "Limit nesting to 3 levels maximum; use early returns and guard clauses"
+    comment_policy: "Explain WHY, not WHAT; comment complex business logic only"
+
+  maintainability:
+    single_responsibility: "Each function/class should have one clear responsibility"
+    dependency_injection: "Inject dependencies rather than hard-coding them"
+    configuration_externalization: "Keep configuration separate from code"
+    error_handling: "Handle errors explicitly; fail fast with clear error messages"
+
+  reliability:
+    input_validation: "Validate all external inputs at system boundaries"
+    defensive_programming: "Check preconditions and postconditions"
+    immutability_preference: "Prefer immutable data structures when possible"
+    transaction_boundaries: "Define clear transaction scopes for data operations"
+
+  performance:
+    efficiency_awareness: "Consider algorithmic complexity and resource usage"
+    lazy_loading: "Load resources only when needed"
+    caching_strategy: "Cache expensive operations with appropriate invalidation"
+    resource_cleanup: "Properly dispose of resources and connections"
+```
+
+### Language-Specific Standards
+
+#### TypeScript/JavaScript
+
+```typescript
+// Naming Conventions & Type Safety
+interface UserProfile {
+  // PascalCase for interfaces/types
+  readonly userId: string; // camelCase for properties, readonly when immutable
+  readonly displayName: string;
+  readonly email: string;
+}
+
+class UserService {
+  // PascalCase for classes
+  private readonly repository: UserRepository; // camelCase for private fields
+
+  constructor(userRepository: UserRepository) {
+    this.repository = userRepository;
+  }
+
+  // Function Design with Result Pattern
+  async getUserById(id: string): Promise<Result<UserProfile, UserError>> {
+    // Input validation
+    if (!id || typeof id !== "string") {
+      return Result.error(new UserError("Invalid user ID", "INVALID_INPUT"));
+    }
+
+    try {
+      const user = await this.repository.findById(id);
+      if (!user) {
+        return Result.error(new UserError("User not found", "NOT_FOUND"));
+      }
+
+      return Result.success(user);
+    } catch (error) {
+      return Result.error(
+        new UserError("Failed to fetch user", "DATABASE_ERROR", error)
+      );
+    }
+  }
+}
+
+// Error Handling Pattern
+class UserError extends Error {
+  constructor(
+    message: string,
+    public readonly code: string,
+    public readonly cause?: unknown
+  ) {
+    super(message);
+    this.name = "UserError";
+  }
+}
+
+// Result Pattern for Error Handling
+class Result<T, E> {
+  private constructor(
+    public readonly success: boolean,
+    public readonly data?: T,
+    public readonly error?: E
+  ) {}
+
+  static success<T>(data: T): Result<T, never> {
+    return new Result(true, data, undefined);
+  }
+
+  static error<E>(error: E): Result<never, E> {
+    return new Result(false, undefined, error);
+  }
+}
+
+// Configuration Defaults
+const TYPESCRIPT_DEFAULTS = {
+  compilerOptions: {
+    strict: true,
+    noImplicitAny: true,
+    noImplicitReturns: true,
+    noUnusedLocals: true,
+    exactOptionalPropertyTypes: true,
+  },
+  eslint: "airbnb-typescript",
+  prettier: { semi: true, singleQuote: true, trailingComma: "es5" },
+  testing: "vitest", // or jest
+  bundler: "vite", // or webpack
+};
+```
+
+#### Python
+
+```python
+# Naming Conventions and Type Hints
+from typing import Optional, Union, Protocol
+from dataclasses import dataclass
+from enum import Enum
+
+@dataclass(frozen=True)  # Immutable data class
+class UserProfile:
+    user_id: str
+    display_name: str
+    email: str
+
+class UserRepository(Protocol):  # Interface definition
+    async def find_by_id(self, user_id: str) -> Optional[UserProfile]:
+        ...
+
+class UserService:
+    def __init__(self, user_repository: UserRepository) -> None:
+        self._repository = user_repository
+
+    async def get_user_by_id(self, user_id: str) -> Result[UserProfile, UserError]:
+        """
+        Retrieve a user by their ID.
+
+        Args:
+            user_id: The unique identifier for the user
+
+        Returns:
+            Result containing UserProfile on success or UserError on failure
+
+        Raises:
+            ValueError: If user_id is invalid
+        """
+        # Input validation
+        if not user_id or not isinstance(user_id, str):
+            return Result.error(UserError("Invalid user ID", "INVALID_INPUT"))
+
+        try:
+            user = await self._repository.find_by_id(user_id)
+            if user is None:
+                return Result.error(UserError("User not found", "NOT_FOUND"))
+
+            return Result.success(user)
+        except Exception as e:
+            return Result.error(UserError("Failed to fetch user", "DATABASE_ERROR", e))
+
+# Custom Exception Classes
+class UserError(Exception):
+    def __init__(self, message: str, code: str, cause: Optional[Exception] = None):
+        super().__init__(message)
+        self.code = code
+        self.cause = cause
+
+# Configuration Defaults
+PYTHON_DEFAULTS = {
+    "version": "3.11+",
+    "linting": "ruff",  # or pylint
+    "formatting": "black",
+    "type_checking": "mypy",
+    "testing": "pytest",
+    "virtual_env": "venv",  # or conda
+    "package_manager": "pip",  # or poetry
+}
+```
+
+#### Java
+
+```java
+// Record Classes for Immutable Data
+public record UserProfile(
+    String userId,
+    String displayName,
+    String email
+) {
+    // Validation in constructor
+    public UserProfile {
+        Objects.requireNonNull(userId, "User ID cannot be null");
+        Objects.requireNonNull(displayName, "Display name cannot be null");
+        Objects.requireNonNull(email, "Email cannot be null");
+    }
+}
+
+// Service Class with Dependency Injection
+@Service
+public class UserService {
+    private final UserRepository userRepository;
+
+    public UserService(UserRepository userRepository) {
+        this.userRepository = Objects.requireNonNull(userRepository);
+    }
+
+    public CompletableFuture<Result<UserProfile, UserError>> getUserById(String userId) {
+        // Input validation
+        if (userId == null || userId.trim().isEmpty()) {
+            return CompletableFuture.completedFuture(
+                Result.error(new UserError("Invalid user ID", "INVALID_INPUT"))
+            );
+        }
+
+        return userRepository.findById(userId)
+            .thenApply(optionalUser -> {
+                if (optionalUser.isEmpty()) {
+                    return Result.error(new UserError("User not found", "NOT_FOUND"));
+                }
+                return Result.success(optionalUser.get());
+            })
+            .exceptionally(throwable ->
+                Result.error(new UserError("Failed to fetch user", "DATABASE_ERROR", throwable))
+            );
+    }
+}
+
+// Custom Exception
+public class UserError extends Exception {
+    private final String code;
+
+    public UserError(String message, String code) {
+        this(message, code, null);
+    }
+
+    public UserError(String message, String code, Throwable cause) {
+        super(message, cause);
+        this.code = Objects.requireNonNull(code);
+    }
+
+    public String getCode() { return code; }
+}
+```
+
+#### Additional Language Standards
+
+```yaml
+LANGUAGE_STANDARDS:
+  go:
+    naming: "PascalCase for public, camelCase for private"
+    error_handling: "Explicit error returns with error wrapping"
+    concurrency: "Goroutines with channel communication"
+    testing: "Built-in testing package with testify"
+
+  rust:
+    naming: "snake_case for variables, PascalCase for types"
+    error_handling: "Result<T, E> types with ? operator"
+    memory_safety: "Ownership and borrowing patterns"
+    testing: "Built-in test framework with proptest"
+
+  csharp:
+    naming: "PascalCase for public members, camelCase for private"
+    error_handling: "Exception handling with custom exception types"
+    async_patterns: "async/await with ConfigureAwait(false)"
+    testing: "xUnit with FluentAssertions"
+
+  swift:
+    naming: "camelCase for variables, PascalCase for types"
+    error_handling: "Result types with do-catch blocks"
+    memory_management: "ARC with weak references"
+    testing: "XCTest with Quick/Nimble"
+
+  kotlin:
+    naming: "camelCase for variables, PascalCase for classes"
+    error_handling: "sealed classes for error types"
+    null_safety: "Nullable types with safe call operators"
+    testing: "JUnit with MockK"
+```
+
+## Function Design Standards
+
+### Function Complexity Guidelines
+
+```yaml
+FUNCTION_DESIGN_RULES:
+  size_limits:
+    max_lines: 20
+    max_parameters: 3
+    max_nesting_depth: 3
+    max_cyclomatic_complexity: 10
+
+  parameter_patterns:
+    single_parameter: "Direct parameter for simple functions"
+    multiple_parameters: "Use parameter object for 3+ parameters"
+    optional_parameters: "Use options/config object pattern"
+
+  return_patterns:
+    single_value: "Return single value or Result type"
+    multiple_values: "Return object/tuple/destructuring pattern"
+    error_handling: "Use Result/Option types instead of exceptions when possible"
+
+  naming_conventions:
+    verbs_for_actions: "createUser, validateInput, processPayment"
+    nouns_for_getters: "user, isValid, totalAmount"
+    boolean_prefixes: "is, has, can, should, will"
+```
+
+### Universal Error Handling
+
+```typescript
+// Universal Error Handling Interface
+interface ErrorInfo {
+  message: string;
+  code: string;
+  timestamp: Date;
+  context?: Record<string, any>;
+  cause?: Error;
+}
+
+// Result Pattern Implementation
+type Result<T, E = ErrorInfo> =
+  | {
+      success: true;
+      data: T;
+    }
+  | {
+      success: false;
+      error: E;
+    };
+
+// Error handling utilities
+const handleResult = <T, E>(
+  result: Result<T, E>,
+  onSuccess: (data: T) => void,
+  onError: (error: E) => void
+): void => {
+  if (result.success) {
+    onSuccess(result.data);
+  } else {
+    onError(result.error);
+  }
+};
+
+// Error creation helpers
+const createError = (
+  message: string,
+  code: string,
+  context?: any
+): ErrorInfo => ({
+  message,
+  code,
+  timestamp: new Date(),
+  context,
+});
+```
+
+## Code Organization Standards
+
+### Module Structure
+
+```yaml
+MODULE_ORGANIZATION:
+  file_structure:
+    single_responsibility: "One primary class/function per file"
+    related_grouping: "Group related utilities in single file"
+    interface_separation: "Separate interfaces from implementations"
+
+  import_patterns:
+    explicit_imports: "Import specific functions/classes, avoid wildcard imports"
+    dependency_organization: "Group imports: standard library, third-party, local"
+    circular_dependency_prevention: "Use dependency injection and interfaces"
+
+  export_patterns:
+    named_exports: "Prefer named exports over default exports"
+    index_files: "Use index files for clean module interfaces"
+    api_boundaries: "Clear public/private API separation"
+```
+
+### Architecture Patterns
+
+```typescript
+// Layered Architecture Pattern
+namespace Architecture {
+  // Domain Layer - Business entities and rules
+  export interface User {
+    readonly id: string;
+    readonly email: string;
+    readonly name: string;
+  }
+
+  // Application Layer - Use cases and orchestration
+  export interface UserService {
+    createUser(userData: CreateUserRequest): Promise<Result<User, UserError>>;
+    getUserById(id: string): Promise<Result<User, UserError>>;
+  }
+
+  // Infrastructure Layer - External concerns
+  export interface UserRepository {
+    save(user: User): Promise<Result<User, RepositoryError>>;
+    findById(id: string): Promise<Result<User | null, RepositoryError>>;
+  }
+
+  // Presentation Layer - UI and API
+  export class UserController {
+    constructor(private userService: UserService) {}
+
+    async createUser(request: CreateUserRequest): Promise<ApiResponse<User>> {
+      const result = await this.userService.createUser(request);
+
+      return result.success
+        ? ApiResponse.success(result.data, 201)
+        : ApiResponse.error(result.error.message, 400);
+    }
+  }
+}
+```
+
+## Quality Enforcement Standards
+
+### Automated Quality Checks
+
+```yaml
+QUALITY_ENFORCEMENT:
+  linting_rules:
+    style_consistency: "Enforce consistent code style across team"
+    complexity_limits: "Flag functions exceeding complexity thresholds"
+    security_patterns: "Check for common security anti-patterns"
+
+  static_analysis:
+    type_checking: "Enforce strong typing where applicable"
+    unused_code: "Detect and remove unused variables/imports"
+    cyclic_dependencies: "Prevent circular dependency creation"
+
+  code_metrics:
+    test_coverage: "Maintain minimum 80% line coverage"
+    duplication: "Flag code duplication above threshold"
+    maintainability_index: "Monitor code maintainability scores"
+```
+
+### Testing Integration
+
+```yaml
+TESTING_STANDARDS:
+  test_organization:
+    naming_convention: "*.test.ts, *_test.py, *Test.java"
+    location: "Adjacent to source files or in parallel test directory"
+    grouping: "Group tests by feature/module, not by test type"
+
+  test_patterns:
+    unit_tests: "Test individual functions/classes in isolation"
+    integration_tests: "Test component interactions"
+    contract_tests: "Test API contracts and interfaces"
+
+  test_data:
+    factories: "Use factory functions for test data creation"
+    fixtures: "Use fixtures for complex setup scenarios"
+    cleanup: "Ensure proper cleanup of test data and resources"
+```
+
+### Code Review Standards
+
+```yaml
+CODE_REVIEW_STANDARDS:
+  review_scope:
+    size_limit: "Maximum 400 lines per pull request"
+    focus_areas: "Security, performance, maintainability"
+
+  review_process:
+    reviewer_assignment: "At least one senior developer"
+    approval_requirements: "Two approvals for critical changes"
+    automated_checks: "Linting, testing, security scanning"
+
+  feedback_quality:
+    constructive_approach: "Specific, actionable feedback"
+    knowledge_sharing: "Explain complex decisions in comments"
+    documentation_review: "Ensure documentation is updated"
+```
+
+## Progressive Enhancement Framework
+
+```yaml
+COMPLEXITY_LEVELS:
+  basic_implementation:
+    patterns: ["simple_functions", "basic_error_handling", "clear_naming"]
+    documentation: "Inline comments for complex logic"
+    testing: "Happy path unit tests"
+
+  intermediate_implementation:
+    patterns:
+      ["design_patterns", "comprehensive_error_handling", "input_validation"]
+    documentation: "Function/class documentation"
+    testing: "Edge cases and error scenarios"
+
+  advanced_implementation:
+    patterns:
+      [
+        "domain_driven_design",
+        "advanced_architecture",
+        "performance_optimization",
+      ]
+    documentation: "Architecture documentation and decision records"
+    testing: "Comprehensive test coverage including integration and performance tests"
+```
+
+These core development standards provide the foundation for all code generation and serve as the primary quality framework across all programming languages and project types.
+
+---
+
+## Universal Code Quality Principles
+
+### Core Programming Principles
+
+```yaml
+UNIVERSAL_PRINCIPLES:
+  readability:
+    naming_conventions: "Use clear, descriptive names for variables, functions, and classes"
+    function_size: "Keep functions under 20 lines; extract larger logic into separate functions"
+    nesting_depth: "Limit nesting to 3 levels maximum; use early returns and guard clauses"
+    comment_policy: "Explain WHY, not WHAT; comment complex business logic only"
+
+  maintainability:
+    single_responsibility: "Each function/class should have one clear responsibility"
+    dependency_injection: "Inject dependencies rather than hard-coding them"
+    configuration_externalization: "Keep configuration separate from code"
+    error_handling: "Handle errors explicitly; fail fast with clear error messages"
+
+  reliability:
+    input_validation: "Validate all external inputs at system boundaries"
+    defensive_programming: "Check preconditions and postconditions"
+    immutability_preference: "Prefer immutable data structures when possible"
+    transaction_boundaries: "Define clear transaction scopes for data operations"
+
+  performance:
+    efficiency_awareness: "Consider algorithmic complexity and resource usage"
+    lazy_loading: "Load resources only when needed"
+    caching_strategy: "Cache expensive operations with appropriate invalidation"
+    resource_cleanup: "Properly dispose of resources and connections"
+```
+
+### Language-Specific Standards
+
+#### TypeScript/JavaScript
+
+```typescript
+// Naming Conventions & Type Safety
+interface UserProfile {
+  // PascalCase for interfaces/types
+  readonly userId: string; // camelCase for properties, readonly when immutable
+  readonly displayName: string;
+  readonly email: string;
+}
+
+class UserService {
+  // PascalCase for classes
+  private readonly repository: UserRepository; // camelCase for private fields
+
+  constructor(userRepository: UserRepository) {
+    this.repository = userRepository;
+  }
+
+  // Function Design with Result Pattern
+  async getUserById(id: string): Promise<Result<UserProfile, UserError>> {
+    // Input validation
+    if (!id || typeof id !== "string") {
+      return Result.error(new UserError("Invalid user ID", "INVALID_INPUT"));
+    }
+
+    try {
+      const user = await this.repository.findById(id);
+      if (!user) {
+        return Result.error(new UserError("User not found", "NOT_FOUND"));
+      }
+
+      return Result.success(user);
+    } catch (error) {
+      return Result.error(
+        new UserError("Failed to fetch user", "DATABASE_ERROR", error)
+      );
+    }
+  }
+}
+
+// Error Handling Pattern
+class UserError extends Error {
+  constructor(
+    message: string,
+    public readonly code: string,
+    public readonly cause?: unknown
+  ) {
+    super(message);
+    this.name = "UserError";
+  }
+}
+
+// Result Pattern for Error Handling
+class Result<T, E> {
+  private constructor(
+    public readonly success: boolean,
+    public readonly data?: T,
+    public readonly error?: E
+  ) {}
+
+  static success<T>(data: T): Result<T, never> {
+    return new Result(true, data, undefined);
+  }
+
+  static error<E>(error: E): Result<never, E> {
+    return new Result(false, undefined, error);
+  }
+}
+
+// Configuration Defaults
+const TYPESCRIPT_DEFAULTS = {
+  compilerOptions: {
+    strict: true,
+    noImplicitAny: true,
+    noImplicitReturns: true,
+    noUnusedLocals: true,
+    exactOptionalPropertyTypes: true,
+  },
+  eslint: "airbnb-typescript",
+  prettier: { semi: true, singleQuote: true, trailingComma: "es5" },
+  testing: "vitest", // or jest
+  bundler: "vite", // or webpack
+};
+```
+
+#### Python
+
+```python
+# Naming Conventions and Type Hints
+from typing import Optional, Union, Protocol
+from dataclasses import dataclass
+from enum import Enum
+
+@dataclass(frozen=True)  # Immutable data class
+class UserProfile:
+    user_id: str
+    display_name: str
+    email: str
+
+class UserRepository(Protocol):  # Interface definition
+    async def find_by_id(self, user_id: str) -> Optional[UserProfile]:
+        ...
+
+class UserService:
+    def __init__(self, user_repository: UserRepository) -> None:
+        self._repository = user_repository
+
+    async def get_user_by_id(self, user_id: str) -> Result[UserProfile, UserError]:
+        """
+        Retrieve a user by their ID.
+
+        Args:
+            user_id: The unique identifier for the user
+
+        Returns:
+            Result containing UserProfile on success or UserError on failure
+
+        Raises:
+            ValueError: If user_id is invalid
+        """
+        # Input validation
+        if not user_id or not isinstance(user_id, str):
+            return Result.error(UserError("Invalid user ID", "INVALID_INPUT"))
+
+        try:
+            user = await self._repository.find_by_id(user_id)
+            if user is None:
+                return Result.error(UserError("User not found", "NOT_FOUND"))
+
+            return Result.success(user)
+        except Exception as e:
+            return Result.error(UserError("Failed to fetch user", "DATABASE_ERROR", e))
+
+# Custom Exception Classes
+class UserError(Exception):
+    def __init__(self, message: str, code: str, cause: Optional[Exception] = None):
+        super().__init__(message)
+        self.code = code
+        self.cause = cause
+
+# Configuration Defaults
+PYTHON_DEFAULTS = {
+    "version": "3.11+",
+    "linting": "ruff",  # or pylint
+    "formatting": "black",
+    "type_checking": "mypy",
+    "testing": "pytest",
+    "virtual_env": "venv",  # or conda
+    "package_manager": "pip",  # or poetry
+}
+```
+
+#### Java
+
+```java
+// Record Classes for Immutable Data
+public record UserProfile(
+    String userId,
+    String displayName,
+    String email
+) {
+    // Validation in constructor
+    public UserProfile {
+        Objects.requireNonNull(userId, "User ID cannot be null");
+        Objects.requireNonNull(displayName, "Display name cannot be null");
+        Objects.requireNonNull(email, "Email cannot be null");
+    }
+}
+
+// Service Class with Dependency Injection
+@Service
+public class UserService {
+    private final UserRepository userRepository;
+
+    public UserService(UserRepository userRepository) {
+        this.userRepository = Objects.requireNonNull(userRepository);
+    }
+
+    public CompletableFuture<Result<UserProfile, UserError>> getUserById(String userId) {
+        // Input validation
+        if (userId == null || userId.trim().isEmpty()) {
+            return CompletableFuture.completedFuture(
+                Result.error(new UserError("Invalid user ID", "INVALID_INPUT"))
+            );
+        }
+
+        return userRepository.findById(userId)
+            .thenApply(optionalUser -> {
+                if (optionalUser.isEmpty()) {
+                    return Result.error(new UserError("User not found", "NOT_FOUND"));
+                }
+                return Result.success(optionalUser.get());
+            })
+            .exceptionally(throwable ->
+                Result.error(new UserError("Failed to fetch user", "DATABASE_ERROR", throwable))
+            );
+    }
+}
+
+// Custom Exception
+public class UserError extends Exception {
+    private final String code;
+
+    public UserError(String message, String code) {
+        this(message, code, null);
+    }
+
+    public UserError(String message, String code, Throwable cause) {
+        super(message, cause);
+        this.code = Objects.requireNonNull(code);
+    }
+
+    public String getCode() { return code; }
+}
+```
+
+#### Additional Language Standards
+
+```yaml
+LANGUAGE_STANDARDS:
+  go:
+    naming: "PascalCase for public, camelCase for private"
+    error_handling: "Explicit error returns with error wrapping"
+    concurrency: "Goroutines with channel communication"
+    testing: "Built-in testing package with testify"
+
+  rust:
+    naming: "snake_case for variables, PascalCase for types"
+    error_handling: "Result<T, E> types with ? operator"
+    memory_safety: "Ownership and borrowing patterns"
+    testing: "Built-in test framework with proptest"
+
+  csharp:
+    naming: "PascalCase for public members, camelCase for private"
+    error_handling: "Exception handling with custom exception types"
+    async_patterns: "async/await with ConfigureAwait(false)"
+    testing: "xUnit with FluentAssertions"
+
+  swift:
+    naming: "camelCase for variables, PascalCase for types"
+    error_handling: "Result types with do-catch blocks"
+    memory_management: "ARC with weak references"
+    testing: "XCTest with Quick/Nimble"
+
+  kotlin:
+    naming: "camelCase for variables, PascalCase for classes"
+    error_handling: "sealed classes for error types"
+    null_safety: "Nullable types with safe call operators"
+    testing: "JUnit with MockK"
+```
+
+## Function Design Standards
+
+### Function Complexity Guidelines
+
+```yaml
+FUNCTION_DESIGN_RULES:
+  size_limits:
+    max_lines: 20
+    max_parameters: 3
+    max_nesting_depth: 3
+    max_cyclomatic_complexity: 10
+
+  parameter_patterns:
+    single_parameter: "Direct parameter for simple functions"
+    multiple_parameters: "Use parameter object for 3+ parameters"
+    optional_parameters: "Use options/config object pattern"
+
+  return_patterns:
+    single_value: "Return single value or Result type"
+    multiple_values: "Return object/tuple/destructuring pattern"
+    error_handling: "Use Result/Option types instead of exceptions when possible"
+
+  naming_conventions:
+    verbs_for_actions: "createUser, validateInput, processPayment"
+    nouns_for_getters: "user, isValid, totalAmount"
+    boolean_prefixes: "is, has, can, should, will"
+```
+
+### Universal Error Handling
+
+```typescript
+// Universal Error Handling Interface
+interface ErrorInfo {
+  message: string;
+  code: string;
+  timestamp: Date;
+  context?: Record<string, any>;
+  cause?: Error;
+}
+
+// Result Pattern Implementation
+type Result<T, E = ErrorInfo> =
+  | {
+      success: true;
+      data: T;
+    }
+  | {
+      success: false;
+      error: E;
+    };
+
+// Error handling utilities
+const handleResult = <T, E>(
+  result: Result<T, E>,
+  onSuccess: (data: T) => void,
+  onError: (error: E) => void
+): void => {
+  if (result.success) {
+    onSuccess(result.data);
+  } else {
+    onError(result.error);
+  }
+};
+
+// Error creation helpers
+const createError = (
+  message: string,
+  code: string,
+  context?: any
+): ErrorInfo => ({
+  message,
+  code,
+  timestamp: new Date(),
+  context,
+});
+```
+
+## Code Organization Standards
+
+### Module Structure
+
+```yaml
+MODULE_ORGANIZATION:
+  file_structure:
+    single_responsibility: "One primary class/function per file"
+    related_grouping: "Group related utilities in single file"
+    interface_separation: "Separate interfaces from implementations"
+
+  import_patterns:
+    explicit_imports: "Import specific functions/classes, avoid wildcard imports"
+    dependency_organization: "Group imports: standard library, third-party, local"
+    circular_dependency_prevention: "Use dependency injection and interfaces"
+
+  export_patterns:
+    named_exports: "Prefer named exports over default exports"
+    index_files: "Use index files for clean module interfaces"
+    api_boundaries: "Clear public/private API separation"
+```
+
+### Architecture Patterns
+
+```typescript
+// Layered Architecture Pattern
+namespace Architecture {
+  // Domain Layer - Business entities and rules
+  export interface User {
+    readonly id: string;
+    readonly email: string;
+    readonly name: string;
+  }
+
+  // Application Layer - Use cases and orchestration
+  export interface UserService {
+    createUser(userData: CreateUserRequest): Promise<Result<User, UserError>>;
+    getUserById(id: string): Promise<Result<User, UserError>>;
+  }
+
+  // Infrastructure Layer - External concerns
+  export interface UserRepository {
+    save(user: User): Promise<Result<User, RepositoryError>>;
+    findById(id: string): Promise<Result<User | null, RepositoryError>>;
+  }
+
+  // Presentation Layer - UI and API
+  export class UserController {
+    constructor(private userService: UserService) {}
+
+    async createUser(request: CreateUserRequest): Promise<ApiResponse<User>> {
+      const result = await this.userService.createUser(request);
+
+      return result.success
+        ? ApiResponse.success(result.data, 201)
+        : ApiResponse.error(result.error.message, 400);
+    }
+  }
+}
+```
+
+## Quality Enforcement Standards
+
+### Automated Quality Checks
+
+```yaml
+QUALITY_ENFORCEMENT:
+  linting_rules:
+    style_consistency: "Enforce consistent code style across team"
+    complexity_limits: "Flag functions exceeding complexity thresholds"
+    security_patterns: "Check for common security anti-patterns"
+
+  static_analysis:
+    type_checking: "Enforce strong typing where applicable"
+    unused_code: "Detect and remove unused variables/imports"
+    cyclic_dependencies: "Prevent circular dependency creation"
+
+  code_metrics:
+    test_coverage: "Maintain minimum 80% line coverage"
+    duplication: "Flag code duplication above threshold"
+    maintainability_index: "Monitor code maintainability scores"
+```
+
+### Testing Integration
+
+```yaml
+TESTING_STANDARDS:
+  test_organization:
+    naming_convention: "*.test.ts, *_test.py, *Test.java"
+    location: "Adjacent to source files or in parallel test directory"
+    grouping: "Group tests by feature/module, not by test type"
+
+  test_patterns:
+    unit_tests: "Test individual functions/classes in isolation"
+    integration_tests: "Test component interactions"
+    contract_tests: "Test API contracts and interfaces"
+
+  test_data:
+    factories: "Use factory functions for test data creation"
+    fixtures: "Use fixtures for complex setup scenarios"
+    cleanup: "Ensure proper cleanup of test data and resources"
+```
+
+### Code Review Standards
+
+```yaml
+CODE_REVIEW_STANDARDS:
+  review_scope:
+    size_limit: "Maximum 400 lines per pull request"
+    focus_areas: "Security, performance, maintainability"
+
+  review_process:
+    reviewer_assignment: "At least one senior developer"
+    approval_requirements: "Two approvals for critical changes"
+    automated_checks: "Linting, testing, security scanning"
+
+  feedback_quality:
+    constructive_approach: "Specific, actionable feedback"
+    knowledge_sharing: "Explain complex decisions in comments"
+    documentation_review: "Ensure documentation is updated"
+```
+
+## Progressive Enhancement Framework
+
+```yaml
+COMPLEXITY_LEVELS:
+  basic_implementation:
+    patterns: ["simple_functions", "basic_error_handling", "clear_naming"]
+    documentation: "Inline comments for complex logic"
+    testing: "Happy path unit tests"
+
+  intermediate_implementation:
+    patterns:
+      ["design_patterns", "comprehensive_error_handling", "input_validation"]
+    documentation: "Function/class documentation"
+    testing: "Edge cases and error scenarios"
+
+  advanced_implementation:
+    patterns:
+      [
+        "domain_driven_design",
+        "advanced_architecture",
+        "performance_optimization",
+      ]
+    documentation: "Architecture documentation and decision records"
+    testing: "Comprehensive test coverage including integration and performance tests"
+```
+
+These core development standards provide the foundation for all code generation and serve as the primary quality framework across all programming languages and project types.
+
+```
+
+```

@@ -1,0 +1,597 @@
+---
+description: Knowledge base management and indexation rules for comprehensive project knowledge tracking
+globs: "**/*"
+alwaysApply: true
+---
+
+# Knowledge Base Management & Indexation Rules
+
+## Core Knowledge Management Principles
+
+- **Comprehensive indexation** of all project artifacts and knowledge
+- **Intelligent categorization** using semantic analysis and ML techniques
+- **Real-time synchronization** between knowledge base and project state
+- **Multi-dimensional search** supporting text, semantic, and structural queries
+- **Version-aware knowledge tracking** with temporal relationships
+- **Collaborative knowledge building** with team-wide sharing and updates
+
+## Knowledge Base Architecture
+
+### Hierarchical Knowledge Organization
+
+```typescript
+interface KnowledgeHierarchy {
+  domains: KnowledgeDomain[];
+  categories: KnowledgeCategory[];
+  entities: KnowledgeEntity[];
+  relationships: KnowledgeRelationship[];
+  metadata: KnowledgeMetadata;
+}
+
+interface KnowledgeDomain {
+  id: string;
+  name: string;
+  description: string;
+  categories: string[];
+  expertiseLevel: ExpertiseLevel;
+  confidence: number;
+  lastUpdated: Date;
+}
+
+interface KnowledgeCategory {
+  id: string;
+  domainId: string;
+  name: string;
+  description: string;
+  entities: string[];
+  subcategories: string[];
+  tags: string[];
+  priority: Priority;
+}
+
+interface KnowledgeEntity {
+  id: string;
+  categoryId: string;
+  type: EntityType;
+  name: string;
+  content: string;
+  summary: string;
+  keywords: string[];
+  embeddings: number[];
+  relationships: RelationshipReference[];
+  sources: SourceReference[];
+  confidence: number;
+  importance: number;
+  lastAccessed: Date;
+  accessCount: number;
+}
+```
+
+### Multi-Format Content Indexing
+
+```typescript
+interface ContentIndexer {
+  indexDocument(document: Document): IndexedContent;
+  indexCode(code: CodeArtifact): IndexedContent;
+  indexConfig(config: ConfigurationFile): IndexedContent;
+  indexTest(test: TestArtifact): IndexedContent;
+  indexDocumentation(docs: DocumentationArtifact): IndexedContent;
+}
+
+interface IndexedContent {
+  id: string;
+  type: ContentType;
+  title: string;
+  content: string;
+  structure: ContentStructure;
+  metadata: ContentMetadata;
+  embeddings: EmbeddingVector;
+  extractedEntities: ExtractedEntity[];
+  keywords: Keyword[];
+  topics: Topic[];
+  sentiment: SentimentAnalysis;
+  complexity: ComplexityMetrics;
+  quality: QualityScore;
+}
+
+class UniversalContentIndexer implements ContentIndexer {
+  indexDocument(document: Document): IndexedContent {
+    const structure = this.analyzeDocumentStructure(document);
+    const entities = this.extractEntities(document.content);
+    const embeddings = this.generateEmbeddings(document.content);
+    const topics = this.extractTopics(document.content);
+
+    return {
+      id: this.generateId(document),
+      type: ContentType.DOCUMENT,
+      title: document.title,
+      content: document.content,
+      structure,
+      metadata: this.extractMetadata(document),
+      embeddings,
+      extractedEntities: entities,
+      keywords: this.extractKeywords(document.content),
+      topics,
+      sentiment: this.analyzeSentiment(document.content),
+      complexity: this.calculateComplexity(document.content),
+      quality: this.assessQuality(document),
+    };
+  }
+}
+```
+
+## Semantic Indexing and Embeddings
+
+### Advanced Embedding Strategies
+
+```typescript
+interface EmbeddingManager {
+  generateTextEmbeddings(text: string): Promise<number[]>;
+  generateCodeEmbeddings(code: string): Promise<number[]>;
+  generateStructuralEmbeddings(structure: any): Promise<number[]>;
+  generateMultiModalEmbeddings(content: MultiModalContent): Promise<number[]>;
+  updateEmbeddings(entityId: string, newContent: string): Promise<void>;
+}
+
+interface MultiModalContent {
+  text?: string;
+  code?: string;
+  structure?: any;
+  metadata?: any;
+  relationships?: any;
+}
+
+class AdvancedEmbeddingManager implements EmbeddingManager {
+  async generateTextEmbeddings(text: string): Promise<number[]> {
+    const preprocessed = this.preprocessText(text);
+    const chunks = this.chunkText(preprocessed);
+    const embeddings = await Promise.all(
+      chunks.map((chunk) => this.embeddingModel.encode(chunk))
+    );
+    return this.aggregateEmbeddings(embeddings);
+  }
+
+  async generateCodeEmbeddings(code: string): Promise<number[]> {
+    const ast = this.parseCode(code);
+    const features = this.extractCodeFeatures(ast);
+    const semanticFeatures = this.extractSemanticFeatures(code);
+
+    return this.combineFeatures([features, semanticFeatures]);
+  }
+}
+```
+
+### Embedding Optimization Techniques
+
+- **Hierarchical embeddings** for different abstraction levels
+- **Domain-specific fine-tuning** for technical content
+- **Multi-granularity vectors** (token, sentence, paragraph, document)
+- **Temporal embeddings** to capture evolution over time
+- **Contextual embeddings** that consider surrounding content
+
+## Knowledge Graph Construction
+
+### Automated Relationship Discovery
+
+```typescript
+interface RelationshipExtractor {
+  extractFromCode(codebase: Codebase): Relationship[];
+  extractFromDocumentation(docs: Documentation[]): Relationship[];
+  extractFromHistory(history: VersionHistory): Relationship[];
+  extractFromRuntime(runtime: RuntimeObservation): Relationship[];
+  extractFromTests(tests: TestSuite): Relationship[];
+}
+
+interface Relationship {
+  id: string;
+  type: RelationshipType;
+  sourceEntity: string;
+  targetEntity: string;
+  strength: number;
+  confidence: number;
+  context: RelationshipContext;
+  evidence: Evidence[];
+  temporal: TemporalInfo;
+  direction: RelationshipDirection;
+}
+
+class ComprehensiveRelationshipExtractor implements RelationshipExtractor {
+  extractFromCode(codebase: Codebase): Relationship[] {
+    const staticRelationships = this.analyzeStaticStructure(codebase);
+    const dataFlowRelationships = this.analyzeDataFlow(codebase);
+    const callGraphRelationships = this.analyzeCallGraph(codebase);
+    const dependencyRelationships = this.analyzeDependencies(codebase);
+
+    return [
+      ...staticRelationships,
+      ...dataFlowRelationships,
+      ...callGraphRelationships,
+      ...dependencyRelationships,
+    ];
+  }
+}
+```
+
+### Graph Enhancement and Validation
+
+```typescript
+interface GraphEnhancer {
+  inferMissingRelationships(graph: KnowledgeGraph): Relationship[];
+  validateRelationships(relationships: Relationship[]): ValidationResult[];
+  enrichWithExternalKnowledge(graph: KnowledgeGraph): EnhancedGraph;
+  optimizeGraphStructure(graph: KnowledgeGraph): OptimizedGraph;
+}
+
+class IntelligentGraphEnhancer implements GraphEnhancer {
+  inferMissingRelationships(graph: KnowledgeGraph): Relationship[] {
+    const patterns = this.identifyRelationshipPatterns(graph);
+    const candidates = this.generateCandidateRelationships(graph, patterns);
+    const validated = this.validateCandidates(candidates, graph);
+
+    return validated.filter((rel) => rel.confidence > this.inferenceThreshold);
+  }
+}
+```
+
+## Advanced Search and Retrieval
+
+### Multi-Modal Search Engine
+
+```typescript
+interface AdvancedSearchEngine {
+  textSearch(query: string, context: SearchContext): SearchResult[];
+  semanticSearch(query: string, context: SearchContext): SemanticResult[];
+  structuralSearch(
+    pattern: StructuralPattern,
+    context: SearchContext
+  ): StructuralResult[];
+  hybridSearch(query: HybridQuery, context: SearchContext): HybridResult[];
+  visualSearch(image: Image, context: SearchContext): VisualResult[];
+  codeSearch(codePattern: CodePattern, context: SearchContext): CodeResult[];
+}
+
+interface HybridQuery {
+  textQuery?: string;
+  semanticQuery?: string;
+  structuralPattern?: StructuralPattern;
+  codePattern?: CodePattern;
+  filters: SearchFilter[];
+  weights: SearchWeights;
+  context: QueryContext;
+}
+
+class ComprehensiveSearchEngine implements AdvancedSearchEngine {
+  hybridSearch(query: HybridQuery, context: SearchContext): HybridResult[] {
+    const results: SearchResult[] = [];
+
+    if (query.textQuery) {
+      results.push(...this.textSearch(query.textQuery, context));
+    }
+
+    if (query.semanticQuery) {
+      results.push(...this.semanticSearch(query.semanticQuery, context));
+    }
+
+    if (query.structuralPattern) {
+      results.push(...this.structuralSearch(query.structuralPattern, context));
+    }
+
+    if (query.codePattern) {
+      results.push(...this.codeSearch(query.codePattern, context));
+    }
+
+    return this.mergeAndRankResults(results, query.weights, context);
+  }
+}
+```
+
+### Intelligent Query Understanding
+
+```typescript
+interface QueryProcessor {
+  parseQuery(query: string): ParsedQuery;
+  expandQuery(query: ParsedQuery): ExpandedQuery;
+  optimizeQuery(query: ExpandedQuery): OptimizedQuery;
+  translateQuery(query: OptimizedQuery, targetType: QueryType): TranslatedQuery;
+}
+
+interface ParsedQuery {
+  intent: QueryIntent;
+  entities: QueryEntity[];
+  filters: QueryFilter[];
+  scope: QueryScope;
+  ambiguities: Ambiguity[];
+}
+
+class IntelligentQueryProcessor implements QueryProcessor {
+  parseQuery(query: string): ParsedQuery {
+    const tokens = this.tokenizeQuery(query);
+    const intent = this.classifyIntent(tokens);
+    const entities = this.extractEntities(tokens);
+    const filters = this.identifyFilters(tokens);
+    const scope = this.determineScope(tokens, intent);
+    const ambiguities = this.detectAmbiguities(tokens, entities);
+
+    return { intent, entities, filters, scope, ambiguities };
+  }
+}
+```
+
+## Real-Time Knowledge Synchronization
+
+### Change Detection and Propagation
+
+```typescript
+interface KnowledgeSynchronizer {
+  detectChanges(source: KnowledgeSource): Change[];
+  propagateChanges(changes: Change[]): PropagationResult;
+  resolveConflicts(conflicts: Conflict[]): Resolution[];
+  validateConsistency(): ConsistencyReport;
+  optimizeSync(): OptimizationResult;
+}
+
+interface Change {
+  id: string;
+  type: ChangeType;
+  source: ChangeSource;
+  target: ChangeTarget;
+  operation: Operation;
+  timestamp: Date;
+  author: string;
+  dependencies: string[];
+  impact: ImpactAssessment;
+}
+
+class RealTimeKnowledgeSynchronizer implements KnowledgeSynchronizer {
+  detectChanges(source: KnowledgeSource): Change[] {
+    const currentState = this.captureCurrentState(source);
+    const previousState = this.loadPreviousState(source);
+    const diff = this.computeDifference(currentState, previousState);
+
+    return this.convertDiffToChanges(diff, source);
+  }
+
+  propagateChanges(changes: Change[]): PropagationResult {
+    const orderedChanges = this.orderChangesByDependency(changes);
+    const results: ChangeResult[] = [];
+
+    for (const change of orderedChanges) {
+      const result = this.applyChange(change);
+      results.push(result);
+
+      if (!result.success) {
+        this.rollbackChanges(results.slice(0, -1));
+        break;
+      }
+    }
+
+    return { results, success: results.every((r) => r.success) };
+  }
+}
+```
+
+### Version Management and History
+
+```typescript
+interface KnowledgeVersionManager {
+  createSnapshot(knowledgeBase: KnowledgeBase): Snapshot;
+  restoreFromSnapshot(snapshotId: string): KnowledgeBase;
+  trackEvolution(entityId: string): Evolution[];
+  mergeVersions(versions: Version[]): MergedVersion;
+  optimizeHistory(): OptimizationResult;
+}
+
+interface Snapshot {
+  id: string;
+  timestamp: Date;
+  knowledgeBase: KnowledgeBase;
+  metadata: SnapshotMetadata;
+  checksum: string;
+  size: number;
+  compressionRatio: number;
+}
+
+class ComprehensiveVersionManager implements KnowledgeVersionManager {
+  createSnapshot(knowledgeBase: KnowledgeBase): Snapshot {
+    const serialized = this.serializeKnowledgeBase(knowledgeBase);
+    const compressed = this.compressData(serialized);
+    const checksum = this.calculateChecksum(compressed);
+
+    return {
+      id: this.generateSnapshotId(),
+      timestamp: new Date(),
+      knowledgeBase,
+      metadata: this.extractMetadata(knowledgeBase),
+      checksum,
+      size: compressed.length,
+      compressionRatio: serialized.length / compressed.length,
+    };
+  }
+}
+```
+
+## Knowledge Quality Assurance
+
+### Automated Quality Assessment
+
+```typescript
+interface KnowledgeQualityAssessor {
+  assessAccuracy(entity: KnowledgeEntity): AccuracyScore;
+  assessCompleteness(domain: KnowledgeDomain): CompletenessScore;
+  assessConsistency(knowledgeBase: KnowledgeBase): ConsistencyScore;
+  assessFreshness(entity: KnowledgeEntity): FreshnessScore;
+  assessRelevance(entity: KnowledgeEntity, context: Context): RelevanceScore;
+}
+
+interface QualityMetrics {
+  accuracy: number;
+  completeness: number;
+  consistency: number;
+  freshness: number;
+  relevance: number;
+  confidence: number;
+  usability: number;
+  reliability: number;
+}
+
+class ComprehensiveQualityAssessor implements KnowledgeQualityAssessor {
+  assessAccuracy(entity: KnowledgeEntity): AccuracyScore {
+    const sourceCredibility = this.assessSourceCredibility(entity.sources);
+    const factualConsistency = this.checkFactualConsistency(entity);
+    const externalValidation = this.validateAgainstExternalSources(entity);
+    const peerReview = this.checkPeerValidation(entity);
+
+    return this.aggregateAccuracyScores([
+      sourceCredibility,
+      factualConsistency,
+      externalValidation,
+      peerReview,
+    ]);
+  }
+}
+```
+
+### Continuous Quality Improvement
+
+```typescript
+interface QualityImprover {
+  identifyQualityIssues(knowledgeBase: KnowledgeBase): QualityIssue[];
+  suggestImprovements(issues: QualityIssue[]): Improvement[];
+  autoCorrectIssues(issues: QualityIssue[]): CorrectionResult[];
+  optimizeKnowledgeBase(knowledgeBase: KnowledgeBase): OptimizationResult;
+}
+
+class AutomatedQualityImprover implements QualityImprover {
+  identifyQualityIssues(knowledgeBase: KnowledgeBase): QualityIssue[] {
+    const accuracyIssues = this.findAccuracyIssues(knowledgeBase);
+    const completenessIssues = this.findCompletenessGaps(knowledgeBase);
+    const consistencyIssues = this.findInconsistencies(knowledgeBase);
+    const freshnessIssues = this.findStaleContent(knowledgeBase);
+
+    return [
+      ...accuracyIssues,
+      ...completenessIssues,
+      ...consistencyIssues,
+      ...freshnessIssues,
+    ];
+  }
+}
+```
+
+## Knowledge Discovery and Mining
+
+### Pattern Mining and Discovery
+
+```typescript
+interface KnowledgeDiscovery {
+  discoverPatterns(knowledgeBase: KnowledgeBase): Pattern[];
+  identifyTrends(knowledgeBase: KnowledgeBase): Trend[];
+  findAnomalies(knowledgeBase: KnowledgeBase): Anomaly[];
+  extractInsights(knowledgeBase: KnowledgeBase): Insight[];
+  predictEvolution(knowledgeBase: KnowledgeBase): Prediction[];
+}
+
+interface Pattern {
+  id: string;
+  type: PatternType;
+  description: string;
+  frequency: number;
+  confidence: number;
+  support: number;
+  examples: Example[];
+  applications: Application[];
+  variations: Variation[];
+}
+
+class IntelligentKnowledgeDiscovery implements KnowledgeDiscovery {
+  discoverPatterns(knowledgeBase: KnowledgeBase): Pattern[] {
+    const structuralPatterns = this.mineStructuralPatterns(knowledgeBase);
+    const behavioralPatterns = this.mineBehavioralPatterns(knowledgeBase);
+    const temporalPatterns = this.mineTemporalPatterns(knowledgeBase);
+    const semanticPatterns = this.mineSemanticPatterns(knowledgeBase);
+
+    return this.consolidatePatterns([
+      ...structuralPatterns,
+      ...behavioralPatterns,
+      ...temporalPatterns,
+      ...semanticPatterns,
+    ]);
+  }
+}
+```
+
+### Automated Knowledge Extraction
+
+```typescript
+interface KnowledgeExtractor {
+  extractFromText(text: string): ExtractedKnowledge;
+  extractFromCode(code: string): ExtractedKnowledge;
+  extractFromLogs(logs: LogEntry[]): ExtractedKnowledge;
+  extractFromTests(tests: TestCase[]): ExtractedKnowledge;
+  extractFromConfig(config: Configuration): ExtractedKnowledge;
+}
+
+interface ExtractedKnowledge {
+  entities: ExtractedEntity[];
+  relationships: ExtractedRelationship[];
+  concepts: ExtractedConcept[];
+  rules: ExtractedRule[];
+  patterns: ExtractedPattern[];
+  facts: ExtractedFact[];
+}
+
+class UniversalKnowledgeExtractor implements KnowledgeExtractor {
+  extractFromCode(code: string): ExtractedKnowledge {
+    const ast = this.parseCode(code);
+    const entities = this.extractCodeEntities(ast);
+    const relationships = this.extractCodeRelationships(ast);
+    const patterns = this.identifyCodePatterns(ast);
+    const concepts = this.extractCodeConcepts(ast);
+
+    return {
+      entities,
+      relationships,
+      concepts,
+      rules: this.extractCodeRules(ast),
+      patterns,
+      facts: this.extractCodeFacts(ast),
+    };
+  }
+}
+```
+
+## Performance Optimization
+
+### Indexing Optimization
+
+```typescript
+interface IndexOptimizer {
+  optimizeIndexStructure(index: SearchIndex): OptimizedIndex;
+  optimizeQueryPerformance(queries: Query[]): QueryOptimization;
+  optimizeStorageLayout(knowledgeBase: KnowledgeBase): StorageOptimization;
+  optimizeMemoryUsage(): MemoryOptimization;
+}
+
+class PerformanceOptimizer implements IndexOptimizer {
+  optimizeIndexStructure(index: SearchIndex): OptimizedIndex {
+    const usage = this.analyzeIndexUsage(index);
+    const bottlenecks = this.identifyBottlenecks(usage);
+    const optimizations = this.generateOptimizations(bottlenecks);
+
+    return this.applyOptimizations(index, optimizations);
+  }
+}
+```
+
+### Caching and Performance
+
+- **Multi-tier caching** for different access patterns
+- **Intelligent prefetching** based on usage patterns
+- **Lazy loading** for large knowledge structures
+- **Compression** for storage and transfer optimization
+- **Distributed caching** for team environments
+
+- **Intelligent prefetching** based on usage patterns
+- **Lazy loading** for large knowledge structures
+- **Compression** for storage and transfer optimization
+- **Distributed caching** for team environments

@@ -1,0 +1,972 @@
+---
+description: "Consolidated domain-specific implementation patterns for API development, security, and testing"
+globs: "**/*"
+alwaysApply: true
+---
+
+# Specialized Domains
+
+_Consolidated domain-specific implementation patterns for API development, security, and testing_
+
+## Purpose & Scope
+
+This document provides focused, domain-specific guidance for API development, security implementation, and testing strategies. All patterns are governed by the behavioral control framework and build upon core development standards.
+
+**Behavioral Control:** See [Agent Control Framework](./agent_control_framework.mdc) for when to apply these patterns, enforcement triggers, and context-aware decisions.
+
+**Foundation:** See [Core Development Standards](./core_development_standards.mdc) for fundamental coding patterns and quality rules.
+
+---
+
+## API Development Patterns
+
+### RESTful API Implementation
+
+```typescript
+// Standard REST Resource Controller
+export class UserController {
+  constructor(private userService: UserService) {}
+
+  // GET /api/v1/users
+  async getUsers(req: Request, res: Response): Promise<void> {
+    const { limit = 20, offset = 0, status } = req.query;
+
+    const result = await this.userService.getUsers({
+      limit: Math.min(Number(limit), 100), // Cap at 100
+      offset: Math.max(Number(offset), 0),
+      filters: { status: status as string },
+    });
+
+    if (result.success) {
+      res.json(
+        createSuccessResponse(result.data, {
+          pagination: {
+            limit: Number(limit),
+            offset: Number(offset),
+            total: result.data.total,
+            hasNext: result.data.hasNext,
+          },
+        })
+      );
+    } else {
+      res
+        .status(400)
+        .json(createErrorResponse(result.error.code, result.error.message));
+    }
+  }
+
+  // POST /api/v1/users
+  async createUser(req: Request, res: Response): Promise<void> {
+    const result = await this.userService.createUser(req.body);
+
+    if (result.success) {
+      res.status(201).json(createSuccessResponse(result.data));
+    } else {
+      const statusCode = result.error.code === "VALIDATION_ERROR" ? 422 : 400;
+      res
+        .status(statusCode)
+        .json(
+          createErrorResponse(
+            result.error.code,
+            result.error.message,
+            result.error.details
+          )
+        );
+    }
+  }
+
+  // PUT /api/v1/users/:id
+  async updateUser(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
+    const result = await this.userService.updateUser(id, req.body);
+
+    if (result.success) {
+      res.json(createSuccessResponse(result.data));
+    } else {
+      const statusCode = result.error.code === "NOT_FOUND" ? 404 : 400;
+      res
+        .status(statusCode)
+        .json(createErrorResponse(result.error.code, result.error.message));
+    }
+  }
+
+  // DELETE /api/v1/users/:id
+  async deleteUser(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
+    const result = await this.userService.deleteUser(id);
+
+    if (result.success) {
+      res.status(204).send();
+    } else {
+      const statusCode = result.error.code === "NOT_FOUND" ? 404 : 400;
+      res
+        .status(statusCode)
+        .json(createErrorResponse(result.error.code, result.error.message));
+    }
+  }
+}
+
+// Standard Response Patterns
+interface SuccessResponse<T> {
+  success: true;
+  data: T;
+  meta?: {
+    pagination?: PaginationMeta;
+    timestamp: string;
+    version: string;
+  };
+}
+
+interface ErrorResponse {
+  success: false;
+  error: {
+    code: string;
+    message: string;
+    details?: Record<string, any>;
+    timestamp: string;
+  };
+}
+
+// Input Validation with DTOs
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  MaxLength,
+  IsOptional,
+  IsEnum,
+} from "class-validator";
+
+export class CreateUserDTO {
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @MinLength(2)
+  @MaxLength(50)
+  name: string;
+
+  @IsString()
+  @MinLength(8)
+  password: string;
+
+  @IsOptional()
+  @IsEnum(["user", "admin", "moderator"])
+  role?: string;
+}
+
+// Validation Middleware
+export const validateDTO = (dtoClass: any) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const dto = plainToClass(dtoClass, req.body);
+      const errors = await validate(dto);
+
+      if (errors.length > 0) {
+        const errorDetails = errors.map((error) => ({
+          field: error.property,
+          message: Object.values(error.constraints || {}).join(", "),
+        }));
+
+        return res.status(422).json(
+          createErrorResponse("VALIDATION_ERROR", "Invalid input data", {
+            errors: errorDetails,
+          })
+        );
+      }
+
+      req.body = dto;
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+};
+```
+
+### API Versioning & Documentation
+
+```typescript
+// API Versioning Strategy
+export class APIVersioning {
+  // URL-based versioning
+  static setupRoutes(app: Express) {
+    app.use("/api/v1", v1Router);
+    app.use("/api/v2", v2Router);
+
+    // Version negotiation middleware
+    app.use("/api", (req, res, next) => {
+      const version = req.headers["api-version"] || "v1";
+      req.url = `/${version}${req.url}`;
+      next();
+    });
+  }
+
+  // Backward compatibility
+  static async handleVersionedResponse(
+    version: string,
+    data: any
+  ): Promise<any> {
+    switch (version) {
+      case "v1":
+        return this.transformToV1(data);
+      case "v2":
+        return this.transformToV2(data);
+      default:
+        return data;
+    }
+  }
+}
+
+// OpenAPI Documentation
+const openApiSpec = {
+  openapi: "3.0.0",
+  info: {
+    title: "User API",
+    version: "1.0.0",
+    description: "User management API with authentication",
+  },
+  servers: [{ url: "/api/v1", description: "Version 1" }],
+  paths: {
+    "/users": {
+      get: {
+        summary: "List users",
+        parameters: [
+          {
+            name: "limit",
+            in: "query",
+            schema: { type: "integer", maximum: 100 },
+          },
+          {
+            name: "offset",
+            in: "query",
+            schema: { type: "integer", minimum: 0 },
+          },
+        ],
+        responses: {
+          200: {
+            description: "Success",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/UserList" },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+};
+```
+
+### GraphQL Implementation
+
+```typescript
+// GraphQL Schema Definition
+const typeDefs = gql`
+  type User {
+    id: ID!
+    email: String!
+    name: String!
+    role: UserRole!
+    createdAt: DateTime!
+  }
+
+  enum UserRole {
+    USER
+    ADMIN
+    MODERATOR
+  }
+
+  type Query {
+    users(limit: Int = 20, offset: Int = 0): UserConnection!
+    user(id: ID!): User
+  }
+
+  type Mutation {
+    createUser(input: CreateUserInput!): User!
+    updateUser(id: ID!, input: UpdateUserInput!): User!
+    deleteUser(id: ID!): Boolean!
+  }
+
+  input CreateUserInput {
+    email: String!
+    name: String!
+    password: String!
+    role: UserRole = USER
+  }
+`;
+
+// GraphQL Resolvers with DataLoader
+export class UserResolvers {
+  constructor(
+    private userService: UserService,
+    private userLoader: DataLoader<string, User>
+  ) {}
+
+  Query = {
+    users: async (_, { limit, offset }, context) => {
+      await this.requireAuth(context);
+      const result = await this.userService.getUsers({ limit, offset });
+
+      if (!result.success) {
+        throw new GraphQLError(result.error.message, {
+          extensions: { code: result.error.code },
+        });
+      }
+
+      return result.data;
+    },
+
+    user: async (_, { id }, context) => {
+      await this.requireAuth(context);
+      return this.userLoader.load(id);
+    },
+  };
+
+  Mutation = {
+    createUser: async (_, { input }, context) => {
+      await this.requirePermission(context, "CREATE_USER");
+      const result = await this.userService.createUser(input);
+
+      if (!result.success) {
+        throw new GraphQLError(result.error.message, {
+          extensions: { code: result.error.code },
+        });
+      }
+
+      return result.data;
+    },
+  };
+}
+```
+
+## Security Implementation Patterns
+
+### Authentication & Authorization
+
+```typescript
+// JWT Authentication Implementation
+export class AuthenticationService {
+  private readonly jwtSecret = process.env.JWT_SECRET!;
+  private readonly jwtConfig = {
+    accessTokenExpiry: "15m",
+    refreshTokenExpiry: "7d",
+    algorithm: "HS256" as const,
+  };
+
+  async generateTokens(userId: string, roles: string[]): Promise<TokenPair> {
+    const accessToken = jwt.sign(
+      { userId, roles, type: "access" },
+      this.jwtSecret,
+      { expiresIn: this.jwtConfig.accessTokenExpiry }
+    );
+
+    const refreshToken = jwt.sign({ userId, type: "refresh" }, this.jwtSecret, {
+      expiresIn: this.jwtConfig.refreshTokenExpiry,
+    });
+
+    return { accessToken, refreshToken };
+  }
+
+  async verifyToken(token: string): Promise<Result<JWTPayload, AuthError>> {
+    try {
+      const decoded = jwt.verify(token, this.jwtSecret) as JWTPayload;
+      return Result.success(decoded);
+    } catch (error) {
+      return Result.error(new AuthError("Invalid token", "INVALID_TOKEN"));
+    }
+  }
+
+  // RBAC Authorization
+  hasPermission(userRoles: string[], requiredPermissions: string[]): boolean {
+    const rolePermissions = {
+      admin: ["*"], // All permissions
+      moderator: ["READ_USERS", "UPDATE_USERS", "DELETE_POSTS"],
+      user: ["READ_PROFILE", "UPDATE_PROFILE"],
+    };
+
+    return userRoles.some((role) =>
+      rolePermissions[role]?.some(
+        (permission) =>
+          permission === "*" || requiredPermissions.includes(permission)
+      )
+    );
+  }
+}
+
+// Authentication Middleware
+export const requireAuth = (requiredPermissions: string[] = []) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const token = extractTokenFromHeader(req);
+      if (!token) {
+        return res
+          .status(401)
+          .json(
+            createErrorResponse("AUTH_REQUIRED", "Authentication required")
+          );
+      }
+
+      const result = await authService.verifyToken(token);
+      if (!result.success) {
+        return res
+          .status(401)
+          .json(
+            createErrorResponse("INVALID_TOKEN", "Invalid or expired token")
+          );
+      }
+
+      if (requiredPermissions.length > 0) {
+        const hasPermission = authService.hasPermission(
+          result.data.roles,
+          requiredPermissions
+        );
+        if (!hasPermission) {
+          return res
+            .status(403)
+            .json(
+              createErrorResponse(
+                "INSUFFICIENT_PERMISSIONS",
+                "Insufficient permissions"
+              )
+            );
+        }
+      }
+
+      req.user = result.data;
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+};
+```
+
+### Input Validation & Security
+
+```typescript
+// Comprehensive Input Validation
+import { body, param, query, validationResult } from "express-validator";
+import DOMPurify from "dompurify";
+
+export class SecurityValidation {
+  // Input sanitization
+  static sanitizeHtml(input: string): string {
+    return DOMPurify.sanitize(input, {
+      ALLOWED_TAGS: ["b", "i", "u", "strong", "em", "p", "br"],
+      ALLOWED_ATTR: [],
+    });
+  }
+
+  // SQL injection prevention
+  static validateSQLInput(input: string): boolean {
+    const sqlInjectionPattern =
+      /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b)/i;
+    return !sqlInjectionPattern.test(input);
+  }
+
+  // Validation middleware chain
+  static userValidation = [
+    body("email").isEmail().normalizeEmail(),
+    body("name").isString().trim().isLength({ min: 2, max: 50 }).escape(),
+    body("password")
+      .isString()
+      .isLength({ min: 8 })
+      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/),
+    (req: Request, res: Response, next: NextFunction) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(422).json(
+          createErrorResponse("VALIDATION_ERROR", "Invalid input data", {
+            errors: errors.array(),
+          })
+        );
+      }
+      next();
+    },
+  ];
+}
+
+// Password Security
+export class PasswordSecurity {
+  private static readonly SALT_ROUNDS = 12;
+
+  static async hashPassword(password: string): Promise<string> {
+    if (!this.validatePasswordStrength(password)) {
+      throw new Error("Password does not meet security requirements");
+    }
+    return bcrypt.hash(password, this.SALT_ROUNDS);
+  }
+
+  static async verifyPassword(
+    password: string,
+    hash: string
+  ): Promise<boolean> {
+    return bcrypt.compare(password, hash);
+  }
+
+  static validatePasswordStrength(password: string): boolean {
+    const requirements = {
+      minLength: password.length >= 8,
+      hasUpperCase: /[A-Z]/.test(password),
+      hasLowerCase: /[a-z]/.test(password),
+      hasNumbers: /\d/.test(password),
+      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+    };
+
+    return Object.values(requirements).every(Boolean);
+  }
+}
+
+// Rate Limiting
+import rateLimit from "express-rate-limit";
+
+export const createRateLimit = (options: {
+  windowMs: number;
+  max: number;
+  message?: string;
+}) =>
+  rateLimit({
+    windowMs: options.windowMs,
+    max: options.max,
+    message: createErrorResponse(
+      "RATE_LIMIT_EXCEEDED",
+      options.message || "Too many requests, please try again later"
+    ),
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
+// Usage examples
+export const authRateLimit = createRateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 attempts
+  message: "Too many authentication attempts",
+});
+
+export const apiRateLimit = createRateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100, // 100 requests per minute
+});
+```
+
+### Security Headers & CORS
+
+```typescript
+// Security Headers Middleware
+export const securityHeaders = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  // Content Security Policy
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+  );
+
+  // HSTS
+  res.setHeader(
+    "Strict-Transport-Security",
+    "max-age=31536000; includeSubDomains"
+  );
+
+  // Prevent clickjacking
+  res.setHeader("X-Frame-Options", "DENY");
+
+  // XSS Protection
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+
+  // Content type sniffing prevention
+  res.setHeader("X-Content-Type-Options", "nosniff");
+
+  // Referrer policy
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+
+  next();
+};
+
+// CORS Configuration
+export const corsConfig = {
+  origin: process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:3000"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-API-Key"],
+  credentials: true,
+  maxAge: 86400, // 24 hours
+};
+```
+
+## Testing Strategy Patterns
+
+### Unit Testing Patterns
+
+```typescript
+// Unit Test Structure - TypeScript/Jest
+describe("UserService", () => {
+  let userService: UserService;
+  let mockUserRepository: jest.Mocked<UserRepository>;
+  let mockEmailService: jest.Mocked<EmailService>;
+
+  beforeEach(() => {
+    mockUserRepository = createMockUserRepository();
+    mockEmailService = createMockEmailService();
+    userService = new UserService(mockUserRepository, mockEmailService);
+  });
+
+  describe("createUser", () => {
+    it("should create user with valid data and send welcome email", async () => {
+      // Arrange
+      const userData = UserTestFactory.createValidUserData();
+      const expectedUser = UserTestFactory.createUser({
+        id: "123",
+        ...userData,
+      });
+      mockUserRepository.findByEmail.mockResolvedValue(null);
+      mockUserRepository.save.mockResolvedValue(Result.success(expectedUser));
+
+      // Act
+      const result = await userService.createUser(userData);
+
+      // Assert
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toEqual(expectedUser);
+        expect(mockUserRepository.save).toHaveBeenCalledWith(
+          expect.objectContaining({
+            email: userData.email,
+            name: userData.name,
+          })
+        );
+        expect(mockEmailService.sendWelcomeEmail).toHaveBeenCalledWith(
+          expectedUser
+        );
+      }
+    });
+
+    it("should return error when email already exists", async () => {
+      // Arrange
+      const userData = UserTestFactory.createValidUserData();
+      const existingUser = UserTestFactory.createUser();
+      mockUserRepository.findByEmail.mockResolvedValue(existingUser);
+
+      // Act
+      const result = await userService.createUser(userData);
+
+      // Assert
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.code).toBe("EMAIL_EXISTS");
+        expect(mockUserRepository.save).not.toHaveBeenCalled();
+        expect(mockEmailService.sendWelcomeEmail).not.toHaveBeenCalled();
+      }
+    });
+  });
+});
+
+// Test Data Factory Pattern
+export class UserTestFactory {
+  static createValidUserData(): CreateUserData {
+    return {
+      email: "test@example.com",
+      name: "John Doe",
+      password: "SecurePass123!",
+    };
+  }
+
+  static createUser(overrides: Partial<User> = {}): User {
+    return {
+      id: "123",
+      email: "test@example.com",
+      name: "John Doe",
+      role: "user",
+      createdAt: new Date(),
+      ...overrides,
+    };
+  }
+
+  static createUserList(count: number = 3): User[] {
+    return Array.from({ length: count }, (_, i) =>
+      this.createUser({
+        id: `${i + 1}`,
+        email: `user${i + 1}@example.com`,
+        name: `User ${i + 1}`,
+      })
+    );
+  }
+}
+```
+
+### Integration Testing Patterns
+
+```typescript
+// API Integration Tests
+describe("User API Integration", () => {
+  let app: Express;
+  let testDb: TestDatabase;
+
+  beforeAll(async () => {
+    app = createTestApp();
+    testDb = await TestDatabase.create();
+  });
+
+  afterAll(async () => {
+    await testDb.cleanup();
+  });
+
+  beforeEach(async () => {
+    await testDb.seed();
+  });
+
+  afterEach(async () => {
+    await testDb.reset();
+  });
+
+  describe("POST /api/v1/users", () => {
+    it("should create user and return 201 with user data", async () => {
+      // Arrange
+      const userData = {
+        email: "test@example.com",
+        name: "John Doe",
+        password: "SecurePass123!",
+      };
+
+      // Act
+      const response = await request(app)
+        .post("/api/v1/users")
+        .send(userData)
+        .expect(201);
+
+      // Assert
+      expect(response.body).toMatchObject({
+        success: true,
+        data: {
+          id: expect.any(String),
+          email: userData.email,
+          name: userData.name,
+          role: "user",
+        },
+      });
+
+      // Verify in database
+      const createdUser = await testDb.findUserByEmail(userData.email);
+      expect(createdUser).toBeTruthy();
+    });
+
+    it("should return 422 for invalid email format", async () => {
+      // Arrange
+      const invalidUserData = {
+        email: "invalid-email",
+        name: "John Doe",
+        password: "SecurePass123!",
+      };
+
+      // Act
+      const response = await request(app)
+        .post("/api/v1/users")
+        .send(invalidUserData)
+        .expect(422);
+
+      // Assert
+      expect(response.body).toMatchObject({
+        success: false,
+        error: {
+          code: "VALIDATION_ERROR",
+          message: expect.stringContaining("Invalid input data"),
+        },
+      });
+    });
+  });
+});
+
+// Database Testing Helper
+export class TestDatabase {
+  private connection: Database;
+
+  static async create(): Promise<TestDatabase> {
+    const connection = await createTestDbConnection();
+    return new TestDatabase(connection);
+  }
+
+  async seed(): Promise<void> {
+    // Seed test data
+    await this.connection.execute(`
+      INSERT INTO users (id, email, name, role) VALUES
+      ('1', 'existing@example.com', 'Existing User', 'user')
+    `);
+  }
+
+  async reset(): Promise<void> {
+    await this.connection.execute("DELETE FROM users");
+  }
+
+  async findUserByEmail(email: string): Promise<User | null> {
+    const result = await this.connection.query(
+      "SELECT * FROM users WHERE email = ?",
+      [email]
+    );
+    return result[0] || null;
+  }
+
+  async cleanup(): Promise<void> {
+    await this.connection.close();
+  }
+}
+```
+
+### End-to-End Testing Patterns
+
+```typescript
+// E2E Test with Playwright
+import { test, expect, Page } from "@playwright/test";
+
+test.describe("User Management E2E", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/login");
+    await loginAsAdmin(page);
+  });
+
+  test("should create new user through UI", async ({ page }) => {
+    // Navigate to user creation
+    await page.click('[data-testid="users-nav"]');
+    await page.click('[data-testid="create-user-btn"]');
+
+    // Fill form
+    await page.fill('[data-testid="email-input"]', "newuser@example.com");
+    await page.fill('[data-testid="name-input"]', "New User");
+    await page.fill('[data-testid="password-input"]', "SecurePass123!");
+    await page.selectOption('[data-testid="role-select"]', "user");
+
+    // Submit form
+    await page.click('[data-testid="submit-btn"]');
+
+    // Verify success
+    await expect(page.locator('[data-testid="success-message"]')).toBeVisible();
+    await expect(page.locator('[data-testid="user-list"]')).toContainText(
+      "newuser@example.com"
+    );
+  });
+
+  test("should handle validation errors gracefully", async ({ page }) => {
+    await page.click('[data-testid="users-nav"]');
+    await page.click('[data-testid="create-user-btn"]');
+
+    // Submit empty form
+    await page.click('[data-testid="submit-btn"]');
+
+    // Check validation errors
+    await expect(page.locator('[data-testid="email-error"]')).toBeVisible();
+    await expect(page.locator('[data-testid="name-error"]')).toBeVisible();
+    await expect(page.locator('[data-testid="password-error"]')).toBeVisible();
+  });
+});
+
+// Test helpers
+async function loginAsAdmin(page: Page): Promise<void> {
+  await page.fill('[data-testid="email-input"]', "admin@example.com");
+  await page.fill('[data-testid="password-input"]', "AdminPass123!");
+  await page.click('[data-testid="login-btn"]');
+  await expect(page.locator('[data-testid="dashboard"]')).toBeVisible();
+}
+```
+
+### Performance Testing
+
+```typescript
+// Load Testing with Artillery.js Configuration
+export const loadTestConfig = {
+  config: {
+    target: "http://localhost:3000",
+    phases: [
+      { duration: 60, arrivalRate: 5 }, // Warm up
+      { duration: 120, arrivalRate: 10 }, // Ramp up
+      { duration: 300, arrivalRate: 20 }, // Sustained load
+    ],
+    defaults: {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    },
+  },
+  scenarios: [
+    {
+      name: "User CRUD Operations",
+      weight: 100,
+      flow: [
+        // Create user
+        {
+          post: {
+            url: "/api/v1/users",
+            json: {
+              email: "{{ $randomEmail() }}",
+              name: "{{ $randomFullName() }}",
+              password: "TestPass123!",
+            },
+          },
+        },
+        // Get user
+        {
+          get: {
+            url: "/api/v1/users/{{ user.id }}",
+          },
+        },
+        // Update user
+        {
+          put: {
+            url: "/api/v1/users/{{ user.id }}",
+            json: {
+              name: "{{ $randomFullName() }}",
+            },
+          },
+        },
+      ],
+    },
+  ],
+};
+
+// Performance Benchmarking
+export class PerformanceBenchmark {
+  static async benchmarkUserCreation(
+    iterations: number = 1000
+  ): Promise<BenchmarkResult> {
+    const start = performance.now();
+    const results: number[] = [];
+
+    for (let i = 0; i < iterations; i++) {
+      const startTime = performance.now();
+
+      await userService.createUser({
+        email: `test${i}@example.com`,
+        name: `Test User ${i}`,
+        password: "TestPass123!",
+      });
+
+      results.push(performance.now() - startTime);
+    }
+
+    const end = performance.now();
+
+    return {
+      totalTime: end - start,
+      averageTime: results.reduce((a, b) => a + b) / results.length,
+      minTime: Math.min(...results),
+      maxTime: Math.max(...results),
+      p95: this.percentile(results, 95),
+      p99: this.percentile(results, 99),
+    };
+  }
+
+  private static percentile(values: number[], p: number): number {
+    const sorted = values.sort((a, b) => a - b);
+    const index = Math.ceil((p / 100) * sorted.length) - 1;
+    return sorted[index];
+  }
+}
+```
+
+These specialized domain patterns provide comprehensive coverage for API development, security implementation, and testing strategies while maintaining consistency with the behavioral control framework and core development standards.
+
+```
+
+This specialized domains file consolidates all the API, security, and testing patterns while eliminating the redundancy found across the original multiple files. Each section provides comprehensive guidance while referencing the behavioral control framework for decision-making.
+```

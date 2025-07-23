@@ -1,0 +1,474 @@
+---
+description: Rules for agent contextualization and knowledge base indexation.
+globs: "**/*"
+alwaysApply: true
+---
+
+# Agent Contextualization & Knowledge Base Indexation Rules
+
+## Core Contextualization Principles
+
+- **Maintain persistent context** across interactions and sessions
+- **Build comprehensive knowledge graphs** of project relationships
+- **Index all relevant information** for rapid retrieval
+- **Learn from interaction patterns** to improve suggestions
+- **Preserve context hierarchy** from global to local scope
+- **Enable semantic search** across all indexed content
+
+## Context Awareness Framework
+
+### Multi-Level Context Management
+
+```typescript
+interface ContextHierarchy {
+  global: GlobalContext;
+  workspace: WorkspaceContext;
+  project: ProjectContext;
+  session: SessionContext;
+  interaction: InteractionContext;
+}
+
+interface GlobalContext {
+  userPreferences: UserPreferences;
+  learningHistory: LearningEntry[];
+  expertiseDomains: string[];
+  commonPatterns: Pattern[];
+}
+
+interface WorkspaceContext {
+  projectTypes: ProjectType[];
+  technologiesUsed: Technology[];
+  architecturalPatterns: ArchitecturalPattern[];
+  teamConventions: Convention[];
+  qualityStandards: QualityRule[];
+}
+
+interface ProjectContext {
+  structure: ProjectStructure;
+  dependencies: Dependency[];
+  buildSystem: BuildConfiguration;
+  testingFramework: TestingSetup;
+  deploymentConfig: DeploymentConfig;
+}
+```
+
+### Context Acquisition Strategies
+
+- **File system analysis**: Scan project structure, dependencies, configurations
+- **Code pattern recognition**: Identify frameworks, libraries, architectural patterns
+- **Git history analysis**: Understand evolution, contributors, change patterns
+- **Documentation parsing**: Extract requirements, specifications, guidelines
+- **Runtime observation**: Monitor execution patterns, performance metrics
+
+## Knowledge Base Architecture
+
+### Entity-Relationship Modeling
+
+```typescript
+interface KnowledgeEntity {
+  id: string;
+  type: EntityType;
+  name: string;
+  description: string;
+  properties: Record<string, any>;
+  relationships: Relationship[];
+  confidence: number;
+  lastUpdated: Date;
+  sources: Source[];
+}
+
+interface Relationship {
+  type: RelationshipType;
+  targetEntityId: string;
+  strength: number;
+  context: string;
+  bidirectional: boolean;
+}
+
+enum EntityType {
+  FILE = "file",
+  FUNCTION = "function",
+  CLASS = "class",
+  MODULE = "module",
+  DEPENDENCY = "dependency",
+  PATTERN = "pattern",
+  REQUIREMENT = "requirement",
+  BUG = "bug",
+  FEATURE = "feature",
+}
+```
+
+### Semantic Indexing System
+
+```typescript
+interface SemanticIndex {
+  documents: IndexedDocument[];
+  vectors: EmbeddingVector[];
+  clusters: ConceptCluster[];
+  taxonomy: ConceptTaxonomy;
+}
+
+interface IndexedDocument {
+  id: string;
+  content: string;
+  metadata: DocumentMetadata;
+  embedding: number[];
+  keywords: string[];
+  entities: EntityReference[];
+  relationships: DocumentRelationship[];
+}
+
+class KnowledgeIndexer {
+  async indexContent(
+    content: string,
+    context: IndexingContext
+  ): Promise<IndexedDocument> {
+    const document = await this.processContent(content);
+    const embedding = await this.generateEmbedding(document);
+    const entities = await this.extractEntities(document);
+    const relationships = await this.identifyRelationships(entities);
+
+    return {
+      ...document,
+      embedding,
+      entities,
+      relationships,
+    };
+  }
+}
+```
+
+## Context Persistence and Retrieval
+
+### Persistent Storage Strategy
+
+```typescript
+interface ContextStore {
+  saveContext(context: ContextHierarchy): Promise<void>;
+  loadContext(identifier: string): Promise<ContextHierarchy>;
+  updateContext(partial: Partial<ContextHierarchy>): Promise<void>;
+  searchContext(query: SearchQuery): Promise<ContextMatch[]>;
+}
+
+class FileSystemContextStore implements ContextStore {
+  private basePath = ".cursor/context/";
+
+  async saveContext(context: ContextHierarchy): Promise<void> {
+    await this.ensureDirectoryExists(this.basePath);
+
+    const contextFiles = {
+      "global.json": context.global,
+      "workspace.json": context.workspace,
+      "project.json": context.project,
+      "session.json": context.session,
+    };
+
+    for (const [filename, data] of Object.entries(contextFiles)) {
+      await this.writeJsonFile(`${this.basePath}${filename}`, data);
+    }
+  }
+}
+```
+
+### Context Retrieval Optimization
+
+- **LRU caching** for frequently accessed context
+- **Lazy loading** for large context hierarchies
+- **Incremental updates** to minimize I/O operations
+- **Compression** for storage efficiency
+- **Version control** for context evolution tracking
+
+## Learning and Adaptation Mechanisms
+
+### Pattern Recognition Engine
+
+```typescript
+interface PatternMatcher {
+  identifyPatterns(codebase: Codebase): Pattern[];
+  validatePatterns(patterns: Pattern[]): ValidationResult[];
+  suggestImprovements(patterns: Pattern[]): Improvement[];
+  trackPatternEvolution(patterns: Pattern[]): Evolution[];
+}
+
+interface Pattern {
+  id: string;
+  type: PatternType;
+  description: string;
+  examples: CodeExample[];
+  frequency: number;
+  confidence: number;
+  applicableContexts: ContextRule[];
+  benefits: string[];
+  drawbacks: string[];
+}
+
+class CodePatternAnalyzer implements PatternMatcher {
+  identifyPatterns(codebase: Codebase): Pattern[] {
+    const structuralPatterns = this.analyzeStructure(codebase);
+    const behavioralPatterns = this.analyzeBehavior(codebase);
+    const namingPatterns = this.analyzeNaming(codebase);
+
+    return [...structuralPatterns, ...behavioralPatterns, ...namingPatterns];
+  }
+}
+```
+
+### Adaptive Learning System
+
+```typescript
+interface LearningEngine {
+  observeInteraction(interaction: Interaction): void;
+  updateKnowledge(feedback: Feedback): void;
+  generateInsights(): Insight[];
+  optimizeRecommendations(): void;
+}
+
+interface Interaction {
+  timestamp: Date;
+  context: ContextSnapshot;
+  userIntent: Intent;
+  agentResponse: Response;
+  userFeedback?: Feedback;
+  outcome: OutcomeMetrics;
+}
+
+class AdaptiveLearningEngine implements LearningEngine {
+  observeInteraction(interaction: Interaction): void {
+    this.updateInteractionHistory(interaction);
+    this.extractLearningSignals(interaction);
+    this.adjustModelWeights(interaction);
+    this.updatePatternConfidence(interaction);
+  }
+}
+```
+
+## Context-Aware Code Generation
+
+### Contextual Code Templates
+
+```typescript
+interface ContextualTemplate {
+  id: string;
+  pattern: string;
+  applicableContexts: ContextMatcher[];
+  variables: TemplateVariable[];
+  dependencies: string[];
+  examples: TemplateExample[];
+}
+
+class ContextAwareCodeGenerator {
+  generateCode(intent: CodeIntent, context: ProjectContext): GeneratedCode {
+    const relevantTemplates = this.findApplicableTemplates(intent, context);
+    const bestTemplate = this.selectOptimalTemplate(relevantTemplates, context);
+    const adaptedTemplate = this.adaptTemplateToContext(bestTemplate, context);
+
+    return this.instantiateTemplate(adaptedTemplate, intent);
+  }
+
+  private findApplicableTemplates(
+    intent: CodeIntent,
+    context: ProjectContext
+  ): ContextualTemplate[] {
+    return this.templates.filter((template) =>
+      template.applicableContexts.every((matcher) => matcher.matches(context))
+    );
+  }
+}
+```
+
+### Context-Driven Suggestions
+
+- **Framework-specific patterns** based on detected technology stack
+- **Team conventions** learned from existing codebase
+- **Performance optimizations** based on project scale and requirements
+- **Security recommendations** tailored to application domain
+- **Testing strategies** aligned with existing test patterns
+
+## Knowledge Graph Construction
+
+### Automated Graph Building
+
+```typescript
+interface KnowledgeGraphBuilder {
+  buildFromCodebase(codebase: Codebase): KnowledgeGraph;
+  enrichWithDocumentation(
+    graph: KnowledgeGraph,
+    docs: Documentation[]
+  ): KnowledgeGraph;
+  addRuntimeInformation(
+    graph: KnowledgeGraph,
+    runtime: RuntimeData
+  ): KnowledgeGraph;
+  updateIncrementally(graph: KnowledgeGraph, changes: Change[]): KnowledgeGraph;
+}
+
+interface KnowledgeGraph {
+  entities: Map<string, KnowledgeEntity>;
+  relationships: Map<string, Relationship[]>;
+  concepts: ConceptHierarchy;
+  metrics: GraphMetrics;
+}
+
+class AutomatedGraphBuilder implements KnowledgeGraphBuilder {
+  buildFromCodebase(codebase: Codebase): KnowledgeGraph {
+    const entities = this.extractEntities(codebase);
+    const relationships = this.discoverRelationships(entities);
+    const concepts = this.buildConceptHierarchy(entities);
+
+    return {
+      entities: new Map(entities.map((e) => [e.id, e])),
+      relationships: this.groupRelationshipsByEntity(relationships),
+      concepts,
+      metrics: this.calculateGraphMetrics(entities, relationships),
+    };
+  }
+}
+```
+
+### Graph Enrichment Strategies
+
+- **Static analysis**: Parse code to extract structural relationships
+- **Dynamic analysis**: Observe runtime behavior and data flow
+- **Documentation mining**: Extract semantic relationships from comments and docs
+- **Version control analysis**: Track relationship evolution over time
+- **External knowledge integration**: Connect to external APIs and databases
+
+## Context-Sensitive Search and Retrieval
+
+### Multi-Modal Search Engine
+
+```typescript
+interface ContextualSearchEngine {
+  search(query: SearchQuery, context: SearchContext): SearchResult[];
+  semanticSearch(embedding: number[], context: SearchContext): SemanticMatch[];
+  hybridSearch(query: HybridQuery, context: SearchContext): RankedResult[];
+  explainResults(results: SearchResult[]): Explanation[];
+}
+
+interface SearchQuery {
+  text: string;
+  type: QueryType;
+  filters: SearchFilter[];
+  scope: SearchScope;
+  intent: SearchIntent;
+}
+
+class AdvancedSearchEngine implements ContextualSearchEngine {
+  search(query: SearchQuery, context: SearchContext): SearchResult[] {
+    const textResults = this.performTextSearch(query, context);
+    const semanticResults = this.performSemanticSearch(query, context);
+    const structuralResults = this.performStructuralSearch(query, context);
+
+    return this.mergeAndRankResults(
+      [...textResults, ...semanticResults, ...structuralResults],
+      context
+    );
+  }
+}
+```
+
+### Contextual Ranking Algorithms
+
+- **Relevance scoring** based on context similarity
+- **Recency weighting** for time-sensitive information
+- **Usage frequency** for commonly accessed items
+- **Authority scoring** for trusted sources
+- **Personalization** based on user preferences and history
+
+## Real-Time Context Updates
+
+### Change Detection and Propagation
+
+```typescript
+interface ContextMonitor {
+  watchForChanges(targets: WatchTarget[]): void;
+  processChange(change: ContextChange): void;
+  propagateUpdates(updates: ContextUpdate[]): void;
+  validateConsistency(): ConsistencyReport;
+}
+
+interface ContextChange {
+  type: ChangeType;
+  target: ChangeTarget;
+  oldValue: any;
+  newValue: any;
+  timestamp: Date;
+  source: ChangeSource;
+}
+
+class RealTimeContextMonitor implements ContextMonitor {
+  watchForChanges(targets: WatchTarget[]): void {
+    targets.forEach((target) => {
+      switch (target.type) {
+        case "file":
+          this.watchFileChanges(target.path);
+          break;
+        case "directory":
+          this.watchDirectoryChanges(target.path);
+          break;
+        case "git":
+          this.watchGitChanges(target.repository);
+          break;
+      }
+    });
+  }
+}
+```
+
+### Incremental Knowledge Updates
+
+- **Delta processing** for efficient updates
+- **Conflict resolution** for concurrent changes
+- **Version management** for context history
+- **Rollback capability** for error recovery
+- **Batch processing** for performance optimization
+
+## Context Quality Assurance
+
+### Validation and Verification
+
+```typescript
+interface ContextValidator {
+  validateConsistency(context: ContextHierarchy): ValidationResult;
+  verifyCompleteness(context: ContextHierarchy): CompletenessReport;
+  checkAccuracy(context: ContextHierarchy): AccuracyMetrics;
+  assessFreshness(context: ContextHierarchy): FreshnessReport;
+}
+
+interface ValidationResult {
+  isValid: boolean;
+  errors: ValidationError[];
+  warnings: ValidationWarning[];
+  suggestions: ValidationSuggestion[];
+}
+
+class ComprehensiveContextValidator implements ContextValidator {
+  validateConsistency(context: ContextHierarchy): ValidationResult {
+    const structuralErrors = this.validateStructure(context);
+    const semanticErrors = this.validateSemantics(context);
+    const referentialErrors = this.validateReferences(context);
+
+    return {
+      isValid:
+        [...structuralErrors, ...semanticErrors, ...referentialErrors]
+          .length === 0,
+      errors: [...structuralErrors, ...semanticErrors, ...referentialErrors],
+      warnings: this.generateWarnings(context),
+      suggestions: this.generateSuggestions(context),
+    };
+  }
+}
+```
+
+### Context Metrics and Analytics
+
+- **Coverage metrics**: Percentage of codebase indexed
+- **Accuracy measurements**: Correctness of extracted relationships
+- **Freshness indicators**: Age of context information
+- **Usage analytics**: Most accessed context elements
+- **Performance metrics**: Search and retrieval times
+
+- **Accuracy measurements**: Correctness of extracted relationships
+- **Freshness indicators**: Age of context information
+- **Usage analytics**: Most accessed context elements
+- **Performance metrics**: Search and retrieval times

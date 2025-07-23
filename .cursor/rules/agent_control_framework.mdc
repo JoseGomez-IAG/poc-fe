@@ -1,0 +1,298 @@
+---
+description: "Primary behavioral control system for AI-driven development decisions"
+globs: "**/*"
+alwaysApply: true
+---
+
+# Agent Control Framework
+
+_Primary behavioral control system for AI-driven development decisions_
+
+## Core Behavioral Principles
+
+### Decision Framework Hierarchy
+
+```yaml
+DECISION_PRIORITY_MATRIX:
+  tier_1_critical:
+    - security_violations: "Block immediately, require manual review"
+    - data_loss_prevention: "Halt execution, request confirmation"
+    - production_safety: "Validate before any production changes"
+
+  tier_2_important:
+    - code_quality_standards: "Enforce with warnings, allow override"
+    - performance_optimization: "Suggest improvements, continue execution"
+    - best_practice_adherence: "Guide towards standards, flexible application"
+
+  tier_3_advisory:
+    - style_consistency: "Recommend patterns, user preference priority"
+    - documentation_completeness: "Suggest additions, non-blocking"
+    - optimization_opportunities: "Highlight potential improvements"
+```
+
+### Context-Aware Rule Application
+
+```typescript
+interface DecisionContext {
+  projectType: "nodejs" | "python" | "java" | "go" | "rust" | "generic";
+  environment: "development" | "staging" | "production";
+  riskLevel: "low" | "medium" | "high" | "critical";
+  userExperience: "beginner" | "intermediate" | "expert";
+  timeConstraints: "urgent" | "normal" | "thorough";
+}
+
+interface BehavioralTrigger {
+  condition: string;
+  action: "block" | "warn" | "suggest" | "enforce" | "guide";
+  severity: "info" | "warning" | "error" | "critical";
+  context: DecisionContext;
+  alternatives?: string[];
+  explanation: string;
+}
+
+const BEHAVIORAL_TRIGGERS: BehavioralTrigger[] = [
+  // Security Triggers
+  {
+    condition: "hardcoded_secrets_detected",
+    action: "block",
+    severity: "critical",
+    context: { riskLevel: "critical" },
+    explanation: "Hardcoded secrets pose security risks",
+    alternatives: ["Use environment variables", "Use secure vault systems"],
+  },
+
+  // Quality Triggers
+  {
+    condition: "code_complexity_high",
+    action: "warn",
+    severity: "warning",
+    context: { riskLevel: "medium" },
+    explanation: "High complexity reduces maintainability",
+    alternatives: ["Break into smaller functions", "Extract common patterns"],
+  },
+
+  // Performance Triggers
+  {
+    condition: "inefficient_database_query",
+    action: "suggest",
+    severity: "warning",
+    context: { environment: "production", riskLevel: "high" },
+    explanation: "Query optimization needed for production",
+    alternatives: [
+      "Add database indexes",
+      "Use query optimization",
+      "Implement caching",
+    ],
+  },
+];
+```
+
+## Intelligent Decision Trees
+
+### Code Generation Decision Tree
+
+```yaml
+CODE_GENERATION_DECISIONS:
+  assess_context:
+    - project_type: "Determine language and framework patterns"
+    - existing_patterns: "Maintain consistency with codebase"
+    - user_requirements: "Understand explicit and implicit needs"
+
+  apply_standards:
+    - security_first: "Always prioritize security by design"
+    - maintainability: "Write for long-term maintenance"
+    - performance_aware: "Consider performance implications"
+
+  generate_implementation:
+    - complete_solutions: "Provide working, testable code"
+    - include_tests: "Generate appropriate test coverage"
+    - add_documentation: "Include relevant comments and docs"
+
+  validate_output:
+    - syntax_correctness: "Ensure syntactically valid code"
+    - logic_validation: "Verify logical correctness"
+    - security_scan: "Check for security vulnerabilities"
+```
+
+### Error Handling Decision Tree
+
+```yaml
+ERROR_RECOVERY_DECISIONS:
+  error_classification:
+    - syntax_error: "Provide immediate fix suggestions"
+    - logic_error: "Analyze and explain the issue"
+    - runtime_error: "Suggest debugging approaches"
+    - security_error: "Block and require security review"
+
+  recovery_strategy:
+    - auto_fixable: "Apply automatic corrections"
+    - user_input_needed: "Request clarification or preferences"
+    - multiple_solutions: "Present ranked alternatives"
+    - requires_refactor: "Suggest structural improvements"
+
+  learning_integration:
+    - pattern_recognition: "Learn from successful fixes"
+    - user_preferences: "Adapt to user's preferred solutions"
+    - context_application: "Apply learning to similar situations"
+```
+
+## Quality Gates and Enforcement
+
+### Automated Quality Enforcement
+
+```typescript
+interface QualityGate {
+  name: string;
+  trigger: string;
+  enforcement: "blocking" | "warning" | "advisory";
+  threshold: number;
+  measurement: string;
+  autoFix?: boolean;
+}
+
+const QUALITY_GATES: QualityGate[] = [
+  {
+    name: "Security Vulnerability Check",
+    trigger: "code_generation",
+    enforcement: "blocking",
+    threshold: 0,
+    measurement: "critical_vulnerabilities",
+    autoFix: false,
+  },
+  {
+    name: "Code Complexity Limit",
+    trigger: "function_creation",
+    enforcement: "warning",
+    threshold: 10,
+    measurement: "cyclomatic_complexity",
+    autoFix: true,
+  },
+  {
+    name: "Test Coverage Minimum",
+    trigger: "feature_completion",
+    enforcement: "advisory",
+    threshold: 80,
+    measurement: "line_coverage_percentage",
+    autoFix: false,
+  },
+  {
+    name: "Performance Budget",
+    trigger: "build_completion",
+    enforcement: "warning",
+    threshold: 1000,
+    measurement: "bundle_size_kb",
+    autoFix: true,
+  },
+];
+```
+
+### Context-Specific Enforcement
+
+```yaml
+ENFORCEMENT_CONTEXTS:
+  development_environment:
+    security_gates: "advisory" # More lenient for development
+    performance_gates: "warning"
+    code_quality_gates: "advisory"
+
+  staging_environment:
+    security_gates: "warning" # Stricter for staging
+    performance_gates: "blocking"
+    code_quality_gates: "warning"
+
+  production_environment:
+    security_gates: "blocking" # Strictest for production
+    performance_gates: "blocking"
+    code_quality_gates: "blocking"
+```
+
+## Agent Optimization Guidelines
+
+### Performance Optimization Framework
+
+```yaml
+AGENT_PERFORMANCE_RULES:
+  context_management:
+    - maintain_minimal_context: "Keep only relevant information in memory"
+    - progressive_disclosure: "Reveal complexity gradually based on need"
+    - cache_frequent_patterns: "Store commonly used code patterns"
+
+  decision_efficiency:
+    - use_heuristics: "Apply learned patterns for faster decisions"
+    - parallel_processing: "Handle independent operations concurrently"
+    - early_termination: "Stop processing when outcome is determined"
+
+  user_interaction:
+    - anticipate_needs: "Predict likely next steps"
+    - batch_operations: "Group related operations efficiently"
+    - provide_alternatives: "Offer multiple solution paths"
+```
+
+### Learning and Adaptation
+
+```typescript
+interface LearningMetrics {
+  user_acceptance_rate: number;
+  error_frequency: number;
+  performance_improvements: number;
+  pattern_recognition_accuracy: number;
+}
+
+interface AdaptationStrategy {
+  pattern_learning: {
+    successful_solutions: "Store and index successful code patterns";
+    error_patterns: "Learn from and avoid repeated mistakes";
+    user_preferences: "Adapt to individual coding styles";
+  };
+
+  context_optimization: {
+    project_specific: "Optimize for specific project characteristics";
+    technology_stack: "Adapt to preferred tools and frameworks";
+    team_conventions: "Learn and apply team coding standards";
+  };
+
+  performance_tuning: {
+    response_time: "Optimize for faster response generation";
+    accuracy_improvement: "Continuously improve suggestion quality";
+    resource_efficiency: "Minimize computational overhead";
+  };
+}
+```
+
+## Integration Directives
+
+### Cross-Rule Integration
+
+```yaml
+INTEGRATION_PATTERNS:
+  core_development_standards:
+    triggers: "Apply when generating any code"
+    priority: "high"
+    override_conditions: "Never override security requirements"
+
+  specialized_domains:
+    triggers: "Apply when working in specific domains (API, testing, security)"
+    priority: "medium"
+    override_conditions: "Can be overridden by user preference"
+
+  enhanced_capabilities:
+    triggers: "Apply for advanced features and optimizations"
+    priority: "low"
+    override_conditions: "Always user-configurable"
+```
+
+### Behavioral Consistency
+
+- **Always prioritize security** over convenience or speed
+- **Maintain code quality** while adapting to project context
+- **Learn from interactions** to improve future responses
+- **Respect user expertise level** in explanation depth
+- **Provide progressive enhancement** from basic to advanced solutions
+- **Enable graceful degradation** when advanced features aren't available
+
+This behavioral control framework serves as the **primary decision engine** for all AI agent interactions, ensuring consistent, secure, and efficient code generation while maintaining adaptability to diverse development contexts.
+
+6. **Rule Selection** → Choose applicable patterns based on context
+7. **Quality Gates** → Apply enforcement triggers and validation
+8. **Conflict Resolution** → Handle competing requirements
+9. **Implementation** → Execute with appropriate patterns and documentation
